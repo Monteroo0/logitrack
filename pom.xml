@@ -8,15 +8,14 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.5.7</version>
-        <relativePath/> 
+        <relativePath/>
     </parent>
 
-    <groupId>com.proyecto</groupId>
+    <groupId>com.logitrack</groupId>
     <artifactId>logitrack</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <properties>
         <java.version>17</java.version>
-        <spring.boot.version>3.2.0</spring.boot.version>
     </properties>
     <dependencies>
         <!-- Spring Boot Starter Web -->
@@ -60,8 +59,8 @@
         </dependency>
         <!-- Validation -->
         <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
         <!-- Lombok -->
         <dependency>
