@@ -1,6 +1,8 @@
 package com.logitrack.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Entity
@@ -14,12 +16,15 @@ public class Bodega {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank
     private String nombre;
 
     @Column(nullable = false)
+    @NotBlank
     private String ubicacion;
 
     @Column(nullable = false)
+    @Min(0)
     private Integer capacidad;
 
     @ManyToOne
