@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,6 +61,13 @@ public class MovimientoController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/por-fecha")
+    public List<Movimiento> movimientosPorFechas(@RequestParam LocalDate inicio, @RequestParam LocalDate fin) {
+        LocalDateTime startDateTime = inicio.atStartOfDay();
+        LocalDateTime endDateTime = fin.atTime(23, 59, 59);
+        return movimientoService.findByFechaBetween(startDateTime, endDateTime);
     }
 
     private MovimientoDTO toDto(Movimiento m) {

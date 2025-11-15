@@ -73,4 +73,8 @@ public class MovimientoService {
         Movimiento saved = movimientoRepository.save(movimiento);
         return Optional.of(saved);
     }
+
+    public List<Movimiento> findByFechaBetween(LocalDateTime start, LocalDateTime end) {
+        return movimientoRepository.findByFechaBetween(start, end);
+    }
 }

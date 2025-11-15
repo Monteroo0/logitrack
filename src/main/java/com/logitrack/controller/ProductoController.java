@@ -61,6 +61,11 @@ public class ProductoController {
         return ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/stock-bajo")
+    public List<Producto> productosConStockBajo() {
+        return productoService.findProductosConStockBajo(10);
+    }
+
     private ProductoDTO toDto(Producto p) {
         return new ProductoDTO(p.getNombre(), p.getCategoria(), p.getStock(), BigDecimal.valueOf(p.getPrecio()));
     }
