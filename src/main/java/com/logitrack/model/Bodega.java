@@ -1,5 +1,6 @@
 package com.logitrack.model;
 
+import com.logitrack.audit.AuditoriaListener;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -10,6 +11,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EntityListeners(AuditoriaListener.class)
 public class Bodega {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

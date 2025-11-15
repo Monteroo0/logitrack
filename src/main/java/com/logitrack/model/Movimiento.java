@@ -1,5 +1,6 @@
 package com.logitrack.model;
 
+import com.logitrack.audit.AuditoriaListener;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -10,6 +11,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EntityListeners(AuditoriaListener.class)
 public class Movimiento {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
