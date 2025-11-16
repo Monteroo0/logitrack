@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogiTrack - Auditoría del Sistema</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.panel{background:#FFFFFF;border:1px solid #DDDDDD;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:1400px;margin:24px auto;padding:24px}
+.panel h2{margin-top:0;color:#0A1A2F}
+.panel h3{color:#0A1A2F;margin-bottom:16px}
+.table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
+.table th,.table td{padding:10px;text-align:left;border-bottom:1px solid #DDDDDD;vertical-align:top}
+.table th{background:#F5F9FF;color:#0A1A2F;font-weight:600}
+.btn.small{padding:4px 8px;font-size:12px;height:auto}
+.btn.tiny{padding:2px 6px;font-size:11px;height:auto}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:4px;font-weight:600;color:#0A1A2F}
+.form-group input,.form-group select{width:100%;padding:8px;border:1px solid #DDDDDD;border-radius:4px}
+.form-actions{display:flex;gap:12px;justify-content:flex-end}
+.alert{padding:12px;border-radius:4px;margin-bottom:16px}
+.alert.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+.alert.error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+.hidden{display:none}
+.modal-content.wide{width:800px;max-width:90vw;max-height:80vh;overflow-y:auto}
+.modal-content.extra-wide{width:1000px;max-width:95vw}
+.filter-section{background:#F5F9FF;border:1px solid #DDDDDD;border-radius:6px;padding:16px;margin-bottom:24px}
+.filter-form{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap}
+.filter-form .form-group{flex:1;min-width:150px}
+.json-preview{background:#f8f9fa;border:1px solid #DDDDDD;border-radius:4px;padding:8px;font-family:monospace;font-size:12px;max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+.audit-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.audit-detail-section{background:#FFFFFF;border:1px solid #DDDDDD;border-radius:4px;padding:12px}
+.audit-detail-section h4{margin-top:0;color:#0A1A2F;font-size:14px}
+.status-badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:bold;text-transform:uppercase}
+.status-create{background:#d4edda;color:#155724}
+.status-update{background:#fff3cd;color:#856404}
+.status-delete{background:#f8d7da;color:#721c24}
+.export-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:16px}
+</style>
+</head>
+<body>
+<header class="topbar">
+<div class="logo-wrap">
+<img class="logo" src="img/logo.png" alt="LogiTrack">
+</div>
+<div class="user-wrap">
+<span id="welcomeText" class="welcome"></span>
+<button id="logoutBtn" class="btn">Cerrar sesión</button>
+</div>
+</header>
+
+<main class="content">
+<nav class="menu">
+<a href="dashboard.html" class="menu-item">Dashboard</a>
+<a href="bodegas.html" class="menu-item">Bodegas</a>
+<a href="productos.html" class="menu-item">Productos</a>
+<a href="movimientos.html" class="menu-item">Movimientos</a>
+<a href="reportes.html" class="menu-item">Reportes</a>
+<a href="auditoria.html" class="menu-item admin-only">Auditoría</a>
+<a href="usuarios.html" class="menu-item admin-only">Usuarios</a>
+</nav>
+
+<div class="panel">
+<div id="alertContainer"></div>
+
+<h2>Auditoría del Sistema</h2>
+
+<div class="filter-section">
+<h3>Filtros de Auditoría</h3>
+<form id="formFiltros" class="filter-form">
+<div class="form-group">
+<label for="usuario">Usuario:</label>
+<input type="text" id="usuario" name="usuario" placeholder="Nombre de usuario">
+</div>
+<div class="form-group">
+<label for="operacion">Operación:</label>
+<select id="operacion" name="operacion">
+<option value="">Todas</option>
+<option value="CREATE">Crear</option>
+<option value="UPDATE">Actualizar</option>
+<option value="DELETE">Eliminar</option>
+</select>
+</div>
+<div class="form-group">
+<label for="entidad">Entidad:</label>
+<select id="entidad" name="entidad">
+<option value="">Todas</option>
+<option value="BODEGA">Bodega</option>
+<option value="PRODUCTO">Producto</option>
+<option value="MOVIMIENTO">Movimiento</option>
+<option value="USUARIO">Usuario</option>
+</select>
+</div>
+<div class="form-group">
+<label for="fechaInicio">Fecha Inicio:</label>
+<input type="date" id="fechaInicio" name="fechaInicio">
+</div>
+<div class="form-group">
+<label for="fechaFin">Fecha Fin:</label>
+<input type="date" id="fechaFin" name="fechaFin">
+</div>
+<div class="form-group">
+<button type="submit" class="btn primary">Filtrar</button>
+<button type="button" id="btnLimpiarFiltros" class="btn">Limpiar</button>
+</div>
+</form>
+</div>
+
+<div id="auditoriasContainer">
+<!-- Aquí va el fetch para cargar auditorías filtradas -->
+<table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Fecha</th>
+<th>Usuario</th>
+<th>Operación</th>
+<th>Entidad</th>
+<th>ID Entidad</th>
+<th>Valores Anteriores</th>
+<th>Valores Nuevos</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="auditoriasTableBody">
+<tr>
+<td colspan="9" style="text-align:center;padding:40px;color:#666">
+No se encontraron auditorías
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="export-actions">
+<button id="btnExportarAuditorias" class="btn">Exportar a Excel</button>
+<button id="btnExportarPDF" class="btn">Exportar a PDF</button>
+</div>
+</div>
+</main>
+
+<!-- Modal para ver detalles completos -->
+<div id="modalDetalleAuditoria" class="modal hidden">
+<div class="modal-content extra-wide">
+<div class="modal-header">
+<h3>Detalle de Auditoría</h3>
+</div>
+<div class="modal-body" id="detalleAuditoriaBody">
+<!-- Aquí se cargarán los detalles completos -->
+</div>
+<div class="modal-actions">
+<button type="button" class="btn" onclick="cerrarModal('modalDetalleAuditoria')">Cerrar</button>
+</div>
+</div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+function parseJwt(t){try{const p=t.split('.')[1];const d=JSON.parse(atob(p));return d}catch(e){return null}}
+const token=localStorage.getItem('token');
+if(!token){window.location.href='index.html'}
+const payload=parseJwt(token);
+const name=(payload&&(payload.name||payload.username||payload.sub))||'Usuario';
+const role=payload&&payload.role||'EMPLEADO';
+document.getElementById('welcomeText').textContent='Bienvenido, '+name;
+document.getElementById('logoutBtn').addEventListener('click',function(){localStorage.removeItem('token');localStorage.removeItem('username');window.location.href='index.html'});
+
+// Control de acceso por rol - Solo ADMIN puede ver esta página
+if(role!=='ADMIN'){
+document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
+// Redirigir si no es admin
+window.location.href='dashboard.html';
+}
+
+// Funciones de utilidad
+function mostrarAlerta(mensaje,tipo='success'){
+const container=document.getElementById('alertContainer');
+const alert=document.createElement('div');
+alert.className='alert '+tipo;
+alert.textContent=mensaje;
+container.innerHTML='';
+container.appendChild(alert);
+setTimeout(()=>alert.remove(),5000);
+}
+
+function cerrarModal(modalId){
+document.getElementById(modalId).classList.add('hidden');
+}
+
+function formatearJSON(obj){
+if(!obj)return'N/A';
+try{
+if(typeof obj==='string')obj=JSON.parse(obj);
+return JSON.stringify(obj,null,2);
+}catch(e){
+return obj;
+}
+}
+
+function obtenerBadgeEstado(operacion){
+const clases={
+'CREATE':'status-create',
+'UPDATE':'status-update',
+'DELETE':'status-delete'
+};
+return'<span class="status-badge '+clases[operacion]+'">'+operacion+'</span>';
+}
+
+function mostrarDetalleAuditoria(auditoria){
+const modal=document.getElementById('modalDetalleAuditoria');
+const body=document.getElementById('detalleAuditoriaBody');
+
+body.innerHTML=`
+<div class="audit-detail-grid">
+<div class="audit-detail-section">
+<h4>Información General</h4>
+<p><strong>ID:</strong> ${auditoria.id}</p>
+<p><strong>Fecha:</strong> ${new Date(auditoria.fecha).toLocaleString()}</p>
+<p><strong>Usuario:</strong> ${auditoria.usuario}</p>
+<p><strong>Operación:</strong> ${obtenerBadgeEstado(auditoria.operacion)}</p>
+<p><strong>Entidad:</strong> ${auditoria.entidad}</p>
+<p><strong>ID Entidad:</strong> ${auditoria.entidadId}</p>
+</div>
+<div class="audit-detail-section">
+<h4>Resumen de Cambios</h4>
+<p><strong>Campos Modificados:</strong> ${auditoria.camposModificados?auditoria.camposModificados.length:0}</p>
+<p><strong>Cambios Significativos:</strong> ${auditoria.cambiosSignificativos||'Ninguno'}</p>
+</div>
+</div>
+
+<div class="audit-detail-section">
+<h4>Valores Anteriores</h4>
+<div class="json-preview">${formatearJSON(auditoria.valoresAnteriores)}</div>
+</div>
+
+<div class="audit-detail-section">
+<h4>Valores Nuevos</h4>
+<div class="json-preview">${formatearJSON(auditoria.valoresNuevos)}</div>
+</div>
+
+<div class="audit-detail-section">
+<h4>Cambios Detectados</h4>
+<div id="cambiosDetectados">
+${detectarCambios(auditoria.valoresAnteriores,auditoria.valoresNuevos)}
+</div>
+</div>
+`;
+
+modal.classList.remove('hidden');
+}
+
+function detectarCambios(anterior,nuevo){
+if(!anterior||!nuevo)return'<p>No hay cambios para mostrar</p>';
+
+try{
+const ant=typeof anterior==='string'?JSON.parse(anterior):anterior;
+const nuev=typeof nuevo==='string'?JSON.parse(nuevo):nuevo;
+
+let html='<table class="table" style="margin-top:8px">';
+html+='<thead><tr><th>Campo</th><th>Valor Anterior</th><th>Valor Nuevo</th></tr></thead>';
+html+='<tbody>';
+
+let tieneCambios=false;
+for(const key in nuev){
+if(ant[key]!==nuev[key]){
+html+='<tr>';
+html+='<td><strong>'+key+'</strong></td>';
+html+='<td>'+(ant[key]||'<em>N/A</em>')+'</td>';
+html+='<td>'+(nuev[key]||'<em>N/A</em>')+'</td>';
+html+='</tr>';
+ tieneCambios=true;
+}
+}
+
+if(!tieneCambios){
+html+='<tr><td colspan="3" style="text-align:center">No se detectaron cambios significativos</td></tr>';
+}
+
+html+='</tbody></table>';
+return html;
+}catch(e){
+return'<p>Error al analizar cambios: '+e.message+'</p>';
+}
+}
+
+function exportarAExcel(tablaId,nombreArchivo){
+// Aquí va la función para exportar a Excel
+console.log('Exportando tabla '+tablaId+' como '+nombreArchivo);
+}
+
+function exportarAPDF(){
+// Aquí va la función para exportar a PDF
+console.log('Exportando auditoría a PDF');
+}
+
+// Event listeners
+document.getElementById('formFiltros').addEventListener('submit',function(e){
+e.preventDefault();
+// Aquí va el fetch para filtrar auditorías
+});
+
+document.getElementById('btnLimpiarFiltros').addEventListener('click',function(){
+document.getElementById('formFiltros').reset();
+// Aquí va el fetch para cargar todas las auditorías
+});
+
+document.getElementById('btnExportarAuditorias').addEventListener('click',function(){
+exportarAExcel('auditoriasTableBody','reporte_auditorias');
+});
+
+document.getElementById('btnExportarPDF').addEventListener('click',function(){
+exportarAPDF();
+});
+
+// Cargar auditorías al iniciar
+window.addEventListener('DOMContentLoaded',async function(){
+// Establecer fechas por defecto
+const hoy=new Date().toISOString().split('T')[0];
+const hace30dias=new Date(Date.now()-30*24*60*60*1000).toISOString().split('T')[0];
+document.getElementById('fechaInicio').value=hace30dias;
+document.getElementById('fechaFin').value=hoy;
+
+  try{const list=await apiRequest('GET','/api/auditoria');const tbody=document.getElementById('auditoriasTableBody');tbody.innerHTML='';list.forEach(a=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${a.id||''}</td><td>${a.fecha||''}</td><td>${(a.usuario&&a.usuario.username)||''}</td><td>${a.tipoOperacion||''}</td><td>${a.entidad||''}</td><td>${a.valoresAnteriores?JSON.stringify(a.valoresAnteriores):''}</td><td>${a.valoresNuevos?JSON.stringify(a.valoresNuevos):''}</td><td><button class='btn tiny' data-id='${a.id}'>Ver</button></td>`;tbody.appendChild(tr)})}catch(err){}
+});
+</script>
+</body>
+</html>

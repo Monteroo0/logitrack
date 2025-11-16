@@ -18,10 +18,12 @@
 </header>
 <main class="content">
 <nav class="menu">
-<a href="#" class="menu-item">Bodegas</a>
-<a href="#" class="menu-item">Productos</a>
-<a href="#" class="menu-item">Movimientos</a>
-<a href="#" class="menu-item">Auditoría</a>
+<a href="bodegas.html" class="menu-item">Bodegas</a>
+<a href="productos.html" class="menu-item">Productos</a>
+<a href="movimientos.html" class="menu-item">Movimientos</a>
+<a href="reportes.html" class="menu-item">Reportes</a>
+<a href="auditoria.html" class="menu-item admin-only">Auditoría</a>
+<a href="usuarios.html" class="menu-item admin-only">Usuarios</a>
 </nav>
 </main>
 <script>
@@ -30,8 +32,10 @@ const token=localStorage.getItem('token');
 if(!token){window.location.href='index.html'}
 const payload=parseJwt(token);
 const name=(payload&&(payload.name||payload.username||payload.sub))||'Usuario';
+const role=payload&&payload.role||'EMPLEADO';
 document.getElementById('welcomeText').textContent='Bienvenido, '+name;
-document.getElementById('logoutBtn').addEventListener('click',function(){localStorage.removeItem('token');localStorage.removeItem('username');window.location.href='index.html'})
+document.getElementById('logoutBtn').addEventListener('click',function(){localStorage.removeItem('token');localStorage.removeItem('username');window.location.href='index.html'});
+if(role!=='ADMIN'){document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none')}
 </script>
 </body>
 </html>

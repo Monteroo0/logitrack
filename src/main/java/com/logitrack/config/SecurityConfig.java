@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -44,7 +45,7 @@ public class SecurityConfig {
                 .accessDeniedHandler(accessDeniedHandler())
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/index.html", "/dashboard.html", "/css/**", "/js/**", "/img/**", "/favicon.ico").permitAll()
+                .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/img/**", "/favicon.ico", "/manifest.json", "/site.webmanifest", "/robots.txt").permitAll()
                 .requestMatchers("/auth/login", "/auth/register", "/auth/ping", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/util/hash", "/util/check", "/util/token").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auditoria/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN","EMPLEADO")
@@ -56,6 +57,11 @@ public class SecurityConfig {
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return web -> web.ignoring().requestMatchers("/css/**", "/js/**", "/img/**", "/*.html", "/favicon.ico", "/manifest.json", "/site.webmanifest", "/robots.txt");
     }
 
     @Bean

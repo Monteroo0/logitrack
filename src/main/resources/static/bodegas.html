@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogiTrack - Gestión de Bodegas</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.panel{background:#FFFFFF;border:1px solid #DDDDDD;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:1200px;margin:24px auto;padding:24px}
+.panel h2{margin-top:0;color:#0A1A2F}
+.table{width:100%;border-collapse:collapse;margin-top:16px}
+.table th,.table td{padding:12px;text-align:left;border-bottom:1px solid #DDDDDD}
+.table th{background:#F5F9FF;color:#0A1A2F;font-weight:600}
+.btn.small{padding:6px 12px;font-size:14px;height:auto}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:4px;font-weight:600;color:#0A1A2F}
+.form-group input,.form-group select{width:100%;padding:8px;border:1px solid #DDDDDD;border-radius:4px}
+.form-actions{display:flex;gap:12px;justify-content:flex-end}
+.alert{padding:12px;border-radius:4px;margin-bottom:16px}
+.alert.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+.alert.error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+.hidden{display:none}
+.modal-content.wide{width:600px;max-width:90vw}
+</style>
+</head>
+<body>
+<header class="topbar">
+<div class="logo-wrap">
+<img class="logo" src="img/logo.png" alt="LogiTrack">
+</div>
+<div class="user-wrap">
+<span id="welcomeText" class="welcome"></span>
+<button id="logoutBtn" class="btn">Cerrar sesión</button>
+</div>
+</header>
+
+<main class="content">
+<nav class="menu">
+<a href="dashboard.html" class="menu-item">Dashboard</a>
+<a href="bodegas.html" class="menu-item">Bodegas</a>
+<a href="productos.html" class="menu-item">Productos</a>
+<a href="movimientos.html" class="menu-item">Movimientos</a>
+<a href="reportes.html" class="menu-item">Reportes</a>
+<a href="auditoria.html" class="menu-item admin-only">Auditoría</a>
+<a href="usuarios.html" class="menu-item admin-only">Usuarios</a>
+</nav>
+
+<div class="panel">
+<div id="alertContainer"></div>
+
+<div class="panel-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+<h2>Gestión de Bodegas</h2>
+<button id="btnNuevaBodega" class="btn primary admin-only">Nueva Bodega</button>
+</div>
+
+<div id="bodegasContainer">
+<!-- Aquí va el fetch para cargar bodegas -->
+<table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Nombre</th>
+<th>Ubicación</th>
+<th>Capacidad</th>
+<th>Encargado</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="bodegasTableBody">
+<tr>
+<td colspan="6" style="text-align:center;padding:40px;color:#666">
+Cargando bodegas...
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Modal para nueva bodega -->
+<div id="modalNuevaBodega" class="modal hidden">
+<div class="modal-content">
+<div class="modal-header">
+<h3>Nueva Bodega</h3>
+</div>
+<div class="modal-body">
+<form id="formNuevaBodega">
+<div class="form-group">
+<label for="nombre">Nombre:</label>
+<input type="text" id="nombre" name="nombre" required>
+</div>
+<div class="form-group">
+<label for="ubicacion">Ubicación:</label>
+<input type="text" id="ubicacion" name="ubicacion" required>
+</div>
+<div class="form-group">
+<label for="capacidad">Capacidad:</label>
+<input type="number" id="capacidad" name="capacidad" min="1" required>
+</div>
+<div class="form-group">
+<label for="encargadoId">Encargado:</label>
+<select id="encargadoId" name="encargadoId" required>
+<option value="">Seleccionar encargado</option>
+</select>
+</div>
+</form>
+</div>
+<div class="modal-actions">
+<button type="button" class="btn" onclick="cerrarModal('modalNuevaBodega')">Cancelar</button>
+<button type="submit" form="formNuevaBodega" class="btn primary">Guardar</button>
+</div>
+</div>
+</div>
+
+<!-- Modal para editar bodega -->
+<div id="modalEditarBodega" class="modal hidden">
+<div class="modal-content">
+<div class="modal-header">
+<h3>Editar Bodega</h3>
+</div>
+<div class="modal-body">
+<form id="formEditarBodega">
+<input type="hidden" id="editId" name="id">
+<div class="form-group">
+<label for="editNombre">Nombre:</label>
+<input type="text" id="editNombre" name="nombre" required>
+</div>
+<div class="form-group">
+<label for="editUbicacion">Ubicación:</label>
+<input type="text" id="editUbicacion" name="ubicacion" required>
+</div>
+<div class="form-group">
+<label for="editCapacidad">Capacidad:</label>
+<input type="number" id="editCapacidad" name="capacidad" min="1" required>
+</div>
+<div class="form-group">
+<label for="editEncargadoId">Encargado:</label>
+<select id="editEncargadoId" name="encargadoId" required>
+<option value="">Seleccionar encargado</option>
+</select>
+</div>
+</form>
+</div>
+<div class="modal-actions">
+<button type="button" class="btn" onclick="cerrarModal('modalEditarBodega')">Cancelar</button>
+<button type="submit" form="formEditarBodega" class="btn primary">Actualizar</button>
+</div>
+</div>
+</div>
+
+<!-- Modal para ver detalles -->
+<div id="modalDetalleBodega" class="modal hidden">
+<div class="modal-content">
+<div class="modal-header">
+<h3>Detalles de Bodega</h3>
+</div>
+<div class="modal-body" id="detalleBodegaBody">
+<!-- Aquí se cargarán los detalles -->
+</div>
+<div class="modal-actions">
+<button type="button" class="btn" onclick="cerrarModal('modalDetalleBodega')">Cerrar</button>
+</div>
+</div>
+</div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+function parseJwt(t){try{const p=t.split('.')[1];const d=JSON.parse(atob(p));return d}catch(e){return null}}
+const token=localStorage.getItem('token');
+if(!token){window.location.href='index.html'}
+const payload=parseJwt(token);
+const name=(payload&&(payload.name||payload.username||payload.sub))||'Usuario';
+const role=payload&&payload.role||'EMPLEADO';
+document.getElementById('welcomeText').textContent='Bienvenido, '+name;
+document.getElementById('logoutBtn').addEventListener('click',function(){localStorage.removeItem('token');localStorage.removeItem('username');window.location.href='index.html'});
+
+// Control de acceso por rol
+if(role!=='ADMIN'){
+document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
+}
+
+// Funciones de utilidad
+function mostrarAlerta(mensaje,tipo='success'){
+const container=document.getElementById('alertContainer');
+const alert=document.createElement('div');
+alert.className='alert '+tipo;
+alert.textContent=mensaje;
+container.innerHTML='';
+container.appendChild(alert);
+setTimeout(()=>alert.remove(),5000);
+}
+
+function cerrarModal(modalId){
+document.getElementById(modalId).classList.add('hidden');
+}
+
+async function cargarEncargados(){
+  const sel=document.getElementById('encargadoId');
+  const selEdit=document.getElementById('editEncargadoId');
+  sel.innerHTML='<option value="">Seleccionar encargado</option>';
+  selEdit.innerHTML='<option value="">Seleccionar encargado</option>';
+}
+
+function filaBodega(id,nombre,ubicacion,capacidad,encargado){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${id||''}</td><td>${nombre||''}</td><td>${ubicacion||''}</td><td>${capacidad||''}</td><td>${encargado||''}</td><td>
+  <button class="btn small" data-action="ver" data-id="${id}">Ver</button>
+  ${role==='ADMIN'?`<button class="btn small" data-action="edit" data-id="${id}">Editar</button><button class="btn small" data-action="del" data-id="${id}">Eliminar</button>`:''}
+  </td>`;
+  return tr;
+}
+
+async function cargarBodegas(){
+  try{
+    const list=await apiRequest('GET','/api/bodegas/list-raw');
+    const tbody=document.getElementById('bodegasTableBody');
+    tbody.innerHTML='';
+    list.forEach((b)=>{
+      const tr=filaBodega(b.id,b.nombre,b.ubicacion,b.capacidad,b.encargadoId||'');
+      tbody.appendChild(tr);
+    });
+  }catch(e){mostrarAlerta(e.message,'error')}
+}
+
+document.getElementById('btnNuevaBodega').addEventListener('click',function(){
+  document.getElementById('modalNuevaBodega').classList.remove('hidden');
+  cargarEncargados();
+});
+
+document.getElementById('formNuevaBodega').addEventListener('submit',async function(e){
+  e.preventDefault();
+  try{
+    const dto={
+      nombre:document.getElementById('nombre').value,
+      ubicacion:document.getElementById('ubicacion').value,
+      capacidad:parseInt(document.getElementById('capacidad').value,10),
+      encargadoId:document.getElementById('encargadoId').value?parseInt(document.getElementById('encargadoId').value,10):null
+    };
+    await apiRequest('POST','/api/bodegas',dto);
+    mostrarAlerta('Bodega creada');
+    cerrarModal('modalNuevaBodega');
+    cargarBodegas();
+  }catch(e){mostrarAlerta(e.message,'error')}
+});
+
+document.getElementById('formEditarBodega').addEventListener('submit',async function(e){
+  e.preventDefault();
+  try{
+    const id=parseInt(document.getElementById('editId').value,10);
+    const dto={
+      nombre:document.getElementById('editNombre').value,
+      ubicacion:document.getElementById('editUbicacion').value,
+      capacidad:parseInt(document.getElementById('editCapacidad').value,10),
+      encargadoId:document.getElementById('editEncargadoId').value?parseInt(document.getElementById('editEncargadoId').value,10):null
+    };
+    await apiRequest('PUT',`/api/bodegas/${id}`,dto);
+    mostrarAlerta('Bodega actualizada');
+    cerrarModal('modalEditarBodega');
+    cargarBodegas();
+  }catch(e){mostrarAlerta(e.message,'error')}
+});
+
+document.getElementById('bodegasTableBody').addEventListener('click',async function(e){
+  const btn=e.target.closest('button');
+  if(!btn)return;
+  const id=parseInt(btn.getAttribute('data-id'),10);
+  const action=btn.getAttribute('data-action');
+  if(action==='ver'){
+    try{
+      const b=await apiRequest('GET',`/api/bodegas/${id}`);
+      document.getElementById('detalleBodegaBody').innerHTML=`<p><strong>Nombre:</strong> ${b.nombre}</p><p><strong>Ubicación:</strong> ${b.ubicacion}</p><p><strong>Capacidad:</strong> ${b.capacidad}</p><p><strong>Encargado ID:</strong> ${b.encargadoId||''}</p>`;
+      document.getElementById('modalDetalleBodega').classList.remove('hidden');
+    }catch(err){mostrarAlerta(err.message,'error')}
+  } else if(action==='edit' && role==='ADMIN'){
+    document.getElementById('editId').value=id;
+    document.getElementById('modalEditarBodega').classList.remove('hidden');
+    cargarEncargados();
+  } else if(action==='del' && role==='ADMIN'){
+    try{
+      await apiRequest('DELETE',`/api/bodegas/${id}`);
+      mostrarAlerta('Bodega eliminada');
+      cargarBodegas();
+    }catch(err){mostrarAlerta(err.message,'error')}
+  }
+});
+
+window.addEventListener('DOMContentLoaded',function(){
+  cargarBodegas();
+});
+</script>
+</body>
+</html>

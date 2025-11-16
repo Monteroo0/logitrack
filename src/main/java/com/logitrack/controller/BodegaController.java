@@ -29,6 +29,19 @@ public class BodegaController {
         return bodegaService.findAll().stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    @GetMapping("/list-raw")
+    public List<java.util.Map<String,Object>> getAllRaw() {
+        return bodegaService.findAll().stream().map(b -> {
+            java.util.Map<String,Object> m = new java.util.HashMap<>();
+            m.put("id", b.getId());
+            m.put("nombre", b.getNombre());
+            m.put("ubicacion", b.getUbicacion());
+            m.put("capacidad", b.getCapacidad());
+            m.put("encargadoId", b.getEncargado() != null ? b.getEncargado().getId() : null);
+            return m;
+        }).collect(Collectors.toList());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<BodegaDTO> getBodegaById(@PathVariable Long id) {
         return bodegaService.findById(id)

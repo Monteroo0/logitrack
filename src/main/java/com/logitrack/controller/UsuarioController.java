@@ -24,6 +24,9 @@ public class UsuarioController {
     @Autowired
     private RolRepository rolRepository;
 
+    @Autowired
+    private com.logitrack.repository.UsuarioRepository usuarioRepository;
+
     private boolean isAdmin(Boolean admin) {
         return admin != null && admin;
     }
@@ -35,12 +38,43 @@ public class UsuarioController {
         return ResponseEntity.ok(list);
     }
 
+    @GetMapping("/list-raw")
+    public ResponseEntity<List<java.util.Map<String,Object>>> getAllRaw(@RequestParam(required = false) Boolean admin) {
+        if (!isAdmin(admin)) return ResponseEntity.status(403).build();
+        List<java.util.Map<String,Object>> list = usuarioService.findAll().stream().map(u -> {
+            java.util.Map<String,Object> m = new java.util.HashMap<>();
+            m.put("id", u.getId());
+            m.put("username", u.getUsername());
+            m.put("nombre", u.getNombre());
+            m.put("rolId", u.getRol()!=null?u.getRol().getId():null);
+            m.put("rol", u.getRol()!=null?u.getRol().getNombre():null);
+            m.put("activo", true);
+            return m;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(list);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioDTO> getById(@PathVariable Long id, @RequestParam(required = false) Boolean admin) {
         if (!isAdmin(admin)) return ResponseEntity.status(403).build();
         return usuarioService.findById(id)
                 .map(u -> ResponseEntity.ok(toDto(u)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/by-username/{username}")
+    public ResponseEntity<java.util.Map<String,Object>> getByUsername(@PathVariable String username) {
+        com.logitrack.model.Usuario u = usuarioRepository.findByUsername(username);
+        if (u == null) return ResponseEntity.notFound().build();
+        Long rolId = u.getRol() != null ? u.getRol().getId() : null;
+        String rolNombre = u.getRol() != null ? u.getRol().getNombre() : null;
+        java.util.Map<String,Object> m = new java.util.HashMap<>();
+        m.put("id", u.getId());
+        m.put("username", u.getUsername());
+        m.put("nombre", u.getNombre());
+        m.put("rolId", rolId);
+        m.put("rol", rolNombre);
+        return ResponseEntity.ok(m);
     }
 
     @PostMapping

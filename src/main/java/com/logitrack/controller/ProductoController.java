@@ -24,6 +24,19 @@ public class ProductoController {
         return productoService.findAll().stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    @GetMapping("/list-raw")
+    public List<java.util.Map<String,Object>> getAllRaw() {
+        return productoService.findAll().stream().map(p -> {
+            java.util.Map<String,Object> m = new java.util.HashMap<>();
+            m.put("id", p.getId());
+            m.put("nombre", p.getNombre());
+            m.put("categoria", p.getCategoria());
+            m.put("stock", p.getStock());
+            m.put("precio", p.getPrecio());
+            return m;
+        }).collect(Collectors.toList());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ProductoDTO> getById(@PathVariable Long id) {
         return productoService.findById(id)

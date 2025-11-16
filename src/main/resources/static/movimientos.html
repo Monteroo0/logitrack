@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogiTrack - Movimientos de Inventario</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.panel{background:#FFFFFF;border:1px solid #DDDDDD;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:1200px;margin:24px auto;padding:24px}
+.panel h2{margin-top:0;color:#0A1A2F}
+.panel h3{color:#0A1A2F;margin-bottom:16px}
+.table{width:100%;border-collapse:collapse;margin-top:16px}
+.table th,.table td{padding:12px;text-align:left;border-bottom:1px solid #DDDDDD}
+.table th{background:#F5F9FF;color:#0A1A2F;font-weight:600}
+.btn.small{padding:6px 12px;font-size:14px;height:auto}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:4px;font-weight:600;color:#0A1A2F}
+.form-group input,.form-group select{width:100%;padding:8px;border:1px solid #DDDDDD;border-radius:4px}
+.form-actions{display:flex;gap:12px;justify-content:flex-end}
+.alert{padding:12px;border-radius:4px;margin-bottom:16px}
+.alert.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+.alert.error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+.hidden{display:none}
+.modal-content.wide{width:600px;max-width:90vw}
+.movement-section{background:#F5F9FF;border:1px solid #DDDDDD;border-radius:6px;padding:20px;margin-bottom:24px}
+.movement-section h3{margin-top:0;color:#0A1A2F}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.filter-section{background:#FFFFFF;border:1px solid #DDDDDD;border-radius:6px;padding:16px;margin-bottom:24px}
+.filter-form{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap}
+.filter-form .form-group{flex:1;min-width:200px}
+</style>
+</head>
+<body>
+<header class="topbar">
+<div class="logo-wrap">
+<img class="logo" src="img/logo.png" alt="LogiTrack">
+</div>
+<div class="user-wrap">
+<span id="welcomeText" class="welcome"></span>
+<button id="logoutBtn" class="btn">Cerrar sesión</button>
+</div>
+</header>
+
+<main class="content">
+<nav class="menu">
+<a href="dashboard.html" class="menu-item">Dashboard</a>
+<a href="bodegas.html" class="menu-item">Bodegas</a>
+<a href="productos.html" class="menu-item">Productos</a>
+<a href="movimientos.html" class="menu-item">Movimientos</a>
+<a href="reportes.html" class="menu-item">Reportes</a>
+<a href="auditoria.html" class="menu-item admin-only">Auditoría</a>
+<a href="usuarios.html" class="menu-item admin-only">Usuarios</a>
+</nav>
+
+<div class="panel">
+<div id="alertContainer"></div>
+
+<h2>Movimientos de Inventario</h2>
+
+<!-- Sección de registro de movimientos -->
+<div class="movement-section">
+<h3>Registrar Entrada</h3>
+<form id="formEntrada">
+<div class="form-grid">
+<div class="form-group">
+<label for="entradaBodega">Bodega Destino:</label>
+<select id="entradaBodega" name="bodegaDestinoId" required>
+<option value="">Seleccionar bodega</option>
+</select>
+</div>
+<div class="form-group">
+<label for="entradaProducto">Producto:</label>
+<select id="entradaProducto" name="productoId" required>
+<option value="">Seleccionar producto</option>
+</select>
+</div>
+<div class="form-group">
+<label for="entradaCantidad">Cantidad:</label>
+<input type="number" id="entradaCantidad" name="cantidad" min="1" required>
+</div>
+</div>
+<div class="form-actions">
+<button type="submit" class="btn primary">Registrar Entrada</button>
+</div>
+</form>
+</div>
+
+<div class="movement-section">
+<h3>Registrar Salida</h3>
+<form id="formSalida">
+<div class="form-grid">
+<div class="form-group">
+<label for="salidaBodega">Bodega Origen:</label>
+<select id="salidaBodega" name="bodegaOrigenId" required>
+<option value="">Seleccionar bodega</option>
+</select>
+</div>
+<div class="form-group">
+<label for="salidaProducto">Producto:</label>
+<select id="salidaProducto" name="productoId" required>
+<option value="">Seleccionar producto</option>
+</select>
+</div>
+<div class="form-group">
+<label for="salidaCantidad">Cantidad:</label>
+<input type="number" id="salidaCantidad" name="cantidad" min="1" required>
+</div>
+</div>
+<div class="form-actions">
+<button type="submit" class="btn primary">Registrar Salida</button>
+</div>
+</form>
+</div>
+
+<div class="movement-section">
+<h3>Registrar Transferencia</h3>
+<form id="formTransferencia">
+<div class="form-grid">
+<div class="form-group">
+<label for="transferenciaOrigen">Bodega Origen:</label>
+<select id="transferenciaOrigen" name="bodegaOrigenId" required>
+<option value="">Seleccionar bodega origen</option>
+</select>
+</div>
+<div class="form-group">
+<label for="transferenciaDestino">Bodega Destino:</label>
+<select id="transferenciaDestino" name="bodegaDestinoId" required>
+<option value="">Seleccionar bodega destino</option>
+</select>
+</div>
+<div class="form-group">
+<label for="transferenciaProducto">Producto:</label>
+<select id="transferenciaProducto" name="productoId" required>
+<option value="">Seleccionar producto</option>
+</select>
+</div>
+<div class="form-group">
+<label for="transferenciaCantidad">Cantidad:</label>
+<input type="number" id="transferenciaCantidad" name="cantidad" min="1" required>
+</div>
+</div>
+<div class="form-actions">
+<button type="submit" class="btn primary">Registrar Transferencia</button>
+</div>
+</form>
+</div>
+
+<!-- Sección de historial -->
+<h3>Historial de Movimientos</h3>
+
+<div class="filter-section">
+<h4>Filtros</h4>
+<form id="formFiltros" class="filter-form">
+<div class="form-group">
+<label for="fechaInicio">Fecha Inicio:</label>
+<input type="date" id="fechaInicio" name="fechaInicio">
+</div>
+<div class="form-group">
+<label for="fechaFin">Fecha Fin:</label>
+<input type="date" id="fechaFin" name="fechaFin">
+</div>
+<div class="form-group">
+<label for="tipoMovimiento">Tipo de Movimiento:</label>
+<select id="tipoMovimiento" name="tipoMovimiento">
+<option value="">Todos</option>
+<option value="ENTRADA">Entrada</option>
+<option value="SALIDA">Salida</option>
+<option value="TRANSFERENCIA">Transferencia</option>
+</select>
+</div>
+<div class="form-group">
+<button type="submit" class="btn primary">Filtrar</button>
+<button type="button" id="btnLimpiarFiltros" class="btn">Limpiar</button>
+</div>
+</form>
+</div>
+
+<div id="movimientosContainer">
+<!-- Aquí va el fetch para cargar movimientos -->
+<table class="table">
+<thead>
+<tr>
+<th>Fecha</th>
+<th>Tipo</th>
+<th>Usuario</th>
+<th>Bodega Origen</th>
+<th>Bodega Destino</th>
+<th>Producto</th>
+<th>Cantidad</th>
+<th>Observaciones</th>
+</tr>
+</thead>
+<tbody id="movimientosTableBody">
+<tr>
+<td colspan="8" style="text-align:center;padding:40px;color:#666">
+Cargando movimientos...
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+function parseJwt(t){try{const p=t.split('.')[1];const d=JSON.parse(atob(p));return d}catch(e){return null}}
+const token=localStorage.getItem('token');
+if(!token){window.location.href='index.html'}
+const payload=parseJwt(token);
+const name=(payload&&(payload.name||payload.username||payload.sub))||'Usuario';
+const role=payload&&payload.role||'EMPLEADO';
+document.getElementById('welcomeText').textContent='Bienvenido, '+name;
+document.getElementById('logoutBtn').addEventListener('click',function(){localStorage.removeItem('token');localStorage.removeItem('username');window.location.href='index.html'});
+
+// Control de acceso por rol
+if(role!=='ADMIN'){
+document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
+}
+
+// Funciones de utilidad
+function mostrarAlerta(mensaje,tipo='success'){
+const container=document.getElementById('alertContainer');
+const alert=document.createElement('div');
+alert.className='alert '+tipo;
+alert.textContent=mensaje;
+container.innerHTML='';
+container.appendChild(alert);
+setTimeout(()=>alert.remove(),5000);
+}
+
+async function obtenerUsuarioId(){
+  const uname=(payload&&(payload.username||payload.sub||name))||'';
+  if(!uname) return null;
+  try{const me=await apiRequest('GET',`/api/usuarios/by-username/${encodeURIComponent(uname)}`);return me.id}catch(e){return null}
+}
+
+async function cargarSelects(){
+  try{
+    const bodegas=await apiRequest('GET','/api/bodegas/list-raw');
+    const productos=await apiRequest('GET','/api/productos/list-raw');
+    const bSelIds=['entradaBodega','salidaBodega','transferenciaOrigen','transferenciaDestino'];
+    bSelIds.forEach(id=>{const s=document.getElementById(id);s.innerHTML='<option value="">Seleccionar bodega</option>';bodegas.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.nombre; s.appendChild(o)})});
+    const pSelIds=['entradaProducto','salidaProducto','transferenciaProducto'];
+    pSelIds.forEach(id=>{const s=document.getElementById(id);s.innerHTML='<option value="">Seleccionar producto</option>';productos.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.nombre; s.appendChild(o)})});
+  }catch(e){mostrarAlerta(e.message,'error')}
+}
+
+// Event listeners
+document.getElementById('formEntrada').addEventListener('submit',async function(e){
+  e.preventDefault();
+  try{
+    const usuarioId=await obtenerUsuarioId();
+    const dto={
+      tipo:'ENTRADA',
+      usuarioId:usuarioId,
+      bodegaDestinoId:parseInt(document.getElementById('entradaBodega').value,10),
+      productos:[{productoId:parseInt(document.getElementById('entradaProducto').value,10),cantidad:parseInt(document.getElementById('entradaCantidad').value,10)}]
+    };
+    await apiRequest('POST','/api/movimientos',dto);
+    mostrarAlerta('Entrada registrada');
+  }catch(err){mostrarAlerta(err.message,'error')}
+});
+
+document.getElementById('formSalida').addEventListener('submit',async function(e){
+  e.preventDefault();
+  try{
+    const usuarioId=await obtenerUsuarioId();
+    const dto={
+      tipo:'SALIDA',
+      usuarioId:usuarioId,
+      bodegaOrigenId:parseInt(document.getElementById('salidaBodega').value,10),
+      productos:[{productoId:parseInt(document.getElementById('salidaProducto').value,10),cantidad:parseInt(document.getElementById('salidaCantidad').value,10)}]
+    };
+    await apiRequest('POST','/api/movimientos',dto);
+    mostrarAlerta('Salida registrada');
+  }catch(err){mostrarAlerta(err.message,'error')}
+});
+
+document.getElementById('formTransferencia').addEventListener('submit',async function(e){
+  e.preventDefault();
+  try{
+    const usuarioId=await obtenerUsuarioId();
+    const dto={
+      tipo:'TRANSFERENCIA',
+      usuarioId:usuarioId,
+      bodegaOrigenId:parseInt(document.getElementById('transferenciaOrigen').value,10),
+      bodegaDestinoId:parseInt(document.getElementById('transferenciaDestino').value,10),
+      productos:[{productoId:parseInt(document.getElementById('transferenciaProducto').value,10),cantidad:parseInt(document.getElementById('transferenciaCantidad').value,10)}]
+    };
+    await apiRequest('POST','/api/movimientos',dto);
+    mostrarAlerta('Transferencia registrada');
+  }catch(err){mostrarAlerta(err.message,'error')}
+});
+
+document.getElementById('formFiltros').addEventListener('submit',async function(e){
+  e.preventDefault();
+  try{
+    const inicio=document.getElementById('fechaInicio').value;
+    const fin=document.getElementById('fechaFin').value;
+    const tipo=document.getElementById('tipoMovimiento').value;
+    let list=await apiRequest('GET',`/api/movimientos/por-fecha?inicio=${inicio}&fin=${fin}`);
+    if(tipo){list=list.filter(m=>m.tipo===tipo)}
+    const tbody=document.getElementById('movimientosTableBody');
+    tbody.innerHTML='';
+    list.forEach(m=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${m.fecha||''}</td><td>${m.tipo||''}</td><td>${''}</td><td>${m.bodegaOrigenId||''}</td><td>${m.bodegaDestinoId||''}</td><td>${(m.productos&&m.productos[0]&&m.productos[0].productoId)||''}</td><td>${(m.productos&&m.productos[0]&&m.productos[0].cantidad)||''}</td><td>${''}</td>`;
+      tbody.appendChild(tr);
+    });
+  }catch(err){mostrarAlerta(err.message,'error')}
+});
+
+document.getElementById('btnLimpiarFiltros').addEventListener('click',function(){
+document.getElementById('formFiltros').reset();
+// Aquí va el fetch para cargar todos los movimientos
+});
+
+// Cargar datos al iniciar
+window.addEventListener('DOMContentLoaded',function(){
+  cargarSelects();
+});
+</script>
+</body>
+</html>

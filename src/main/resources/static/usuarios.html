@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogiTrack - Gestión de Usuarios</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.panel{background:#FFFFFF;border:1px solid #DDDDDD;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:1200px;margin:24px auto;padding:24px}
+.panel h2{margin-top:0;color:#0A1A2F}
+.table{width:100%;border-collapse:collapse;margin-top:16px}
+.table th,.table td{padding:12px;text-align:left;border-bottom:1px solid #DDDDDD}
+.table th{background:#F5F9FF;color:#0A1A2F;font-weight:600}
+.btn.small{padding:6px 12px;font-size:14px;height:auto}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:4px;font-weight:600;color:#0A1A2F}
+.form-group input,.form-group select{width:100%;padding:8px;border:1px solid #DDDDDD;border-radius:4px}
+.form-actions{display:flex;gap:12px;justify-content:flex-end}
+.alert{padding:12px;border-radius:4px;margin-bottom:16px}
+.alert.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+.alert.error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+.hidden{display:none}
+.modal-content.wide{width:600px;max-width:90vw}
+.status-badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:bold;text-transform:uppercase}
+.status-active{background:#d4edda;color:#155724}
+.status-inactive{background:#f8d7da;color:#721c24}
+.role-badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:bold}
+.role-admin{background:#cce5ff;color:#004085}
+.role-empleado{background:#d4edda;color:#155724}
+.password-strength{margin-top:4px;font-size:12px}
+.password-strength.weak{color:#dc3545}
+.password-strength.medium{color:#ffc107}
+.password-strength.strong{color:#28a745}
+</style>
+</head>
+<body>
+<header class="topbar">
+<div class="logo-wrap">
+<img class="logo" src="img/logo.png" alt="LogiTrack">
+</div>
+<div class="user-wrap">
+<span id="welcomeText" class="welcome"></span>
+<button id="logoutBtn" class="btn">Cerrar sesión</button>
+</div>
+</header>
+
+<main class="content">
+<nav class="menu">
+<a href="dashboard.html" class="menu-item">Dashboard</a>
+<a href="bodegas.html" class="menu-item">Bodegas</a>
+<a href="productos.html" class="menu-item">Productos</a>
+<a href="movimientos.html" class="menu-item">Movimientos</a>
+<a href="reportes.html" class="menu-item">Reportes</a>
+<a href="auditoria.html" class="menu-item admin-only">Auditoría</a>
+<a href="usuarios.html" class="menu-item admin-only">Usuarios</a>
+</nav>
+
+<div class="panel">
+<div id="alertContainer"></div>
+
+<div class="panel-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+<h2>Gestión de Usuarios</h2>
+<button id="btnNuevoUsuario" class="btn primary admin-only">Nuevo Usuario</button>
+</div>
+
+<div id="usuariosContainer">
+<!-- Aquí va el fetch para cargar usuarios -->
+<table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Username</th>
+<th>Nombre</th>
+<th>Email</th>
+<th>Rol</th>
+<th>Estado</th>
+<th>Fecha Creación</th>
+<th>Último Acceso</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="usuariosTableBody">
+<tr>
+<td colspan="9" style="text-align:center;padding:40px;color:#666">
+Cargando usuarios...
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Modal para nuevo usuario -->
+<div id="modalNuevoUsuario" class="modal hidden">
+<div class="modal-content">
+<div class="modal-header">
+<h3>Nuevo Usuario</h3>
+</div>
+<div class="modal-body">
+<form id="formNuevoUsuario">
+<div class="form-group">
+<label for="username">Username:</label>
+<input type="text" id="username" name="username" required>
+</div>
+<div class="form-group">
+<label for="nombre">Nombre Completo:</label>
+<input type="text" id="nombre" name="nombre" required>
+</div>
+<div class="form-group">
+<label for="email">Email:</label>
+<input type="email" id="email" name="email" required>
+</div>
+<div class="form-group">
+<label for="password">Contraseña:</label>
+<input type="password" id="password" name="password" required>
+<div id="passwordStrength" class="password-strength"></div>
+</div>
+<div class="form-group">
+<label for="rolId">Rol:</label>
+<select id="rolId" name="rolId" required>
+<option value="">Seleccionar rol</option>
+<option value="1">ADMIN</option>
+<option value="2">EMPLEADO</option>
+</select>
+</div>
+<div class="form-group">
+<label for="activo">Estado:</label>
+<select id="activo" name="activo" required>
+<option value="true">Activo</option>
+<option value="false">Inactivo</option>
+</select>
+</div>
+</form>
+</div>
+<div class="modal-actions">
+<button type="button" class="btn" onclick="cerrarModal('modalNuevoUsuario')">Cancelar</button>
+<button type="submit" form="formNuevoUsuario" class="btn primary">Guardar</button>
+</div>
+</div>
+</div>
+
+<!-- Modal para editar usuario -->
+<div id="modalEditarUsuario" class="modal hidden">
+<div class="modal-content">
+<div class="modal-header">
+<h3>Editar Usuario</h3>
+</div>
+<div class="modal-body">
+<form id="formEditarUsuario">
+<input type="hidden" id="editId" name="id">
+<div class="form-group">
+<label for="editUsername">Username:</label>
+<input type="text" id="editUsername" name="username" required>
+</div>
+<div class="form-group">
+<label for="editNombre">Nombre Completo:</label>
+<input type="text" id="editNombre" name="nombre" required>
+</div>
+<div class="form-group">
+<label for="editEmail">Email:</label>
+<input type="email" id="editEmail" name="email" required>
+</div>
+<div class="form-group">
+<label for="editPassword">Nueva Contraseña (dejar vacío para mantener actual):</label>
+<input type="password" id="editPassword" name="password">
+<div id="editPasswordStrength" class="password-strength"></div>
+</div>
+<div class="form-group">
+<label for="editRolId">Rol:</label>
+<select id="editRolId" name="rolId" required>
+<option value="">Seleccionar rol</option>
+<option value="1">ADMIN</option>
+<option value="2">EMPLEADO</option>
+</select>
+</div>
+<div class="form-group">
+<label for="editActivo">Estado:</label>
+<select id="editActivo" name="activo" required>
+<option value="true">Activo</option>
+<option value="false">Inactivo</option>
+</select>
+</div>
+</form>
+</div>
+<div class="modal-actions">
+<button type="button" class="btn" onclick="cerrarModal('modalEditarUsuario')">Cancelar</button>
+<button type="submit" form="formEditarUsuario" class="btn primary">Actualizar</button>
+</div>
+</div>
+</div>
+
+<!-- Modal para cambiar contraseña -->
+<div id="modalCambiarPassword" class="modal hidden">
+<div class="modal-content">
+<div class="modal-header">
+<h3>Cambiar Contraseña</h3>
+</div>
+<div class="modal-body">
+<form id="formCambiarPassword">
+<input type="hidden" id="changePasswordId" name="id">
+<div class="form-group">
+<label for="newPassword">Nueva Contraseña:</label>
+<input type="password" id="newPassword" name="newPassword" required>
+<div id="newPasswordStrength" class="password-strength"></div>
+</div>
+<div class="form-group">
+<label for="confirmPassword">Confirmar Contraseña:</label>
+<input type="password" id="confirmPassword" name="confirmPassword" required>
+</div>
+</form>
+</div>
+<div class="modal-actions">
+<button type="button" class="btn" onclick="cerrarModal('modalCambiarPassword')">Cancelar</button>
+<button type="submit" form="formCambiarPassword" class="btn primary">Cambiar Contraseña</button>
+</div>
+</div>
+</div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+function parseJwt(t){try{const p=t.split('.')[1];const d=JSON.parse(atob(p));return d}catch(e){return null}}
+const token=localStorage.getItem('token');
+if(!token){window.location.href='index.html'}
+const payload=parseJwt(token);
+const name=(payload&&(payload.name||payload.username||payload.sub))||'Usuario';
+const role=payload&&payload.role||'EMPLEADO';
+document.getElementById('welcomeText').textContent='Bienvenido, '+name;
+document.getElementById('logoutBtn').addEventListener('click',function(){localStorage.removeItem('token');localStorage.removeItem('username');window.location.href='index.html'});
+
+// Control de acceso por rol - Solo ADMIN puede ver esta página
+if(role!=='ADMIN'){
+document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
+// Redirigir si no es admin
+window.location.href='dashboard.html';
+}
+
+// Funciones de utilidad
+function mostrarAlerta(mensaje,tipo='success'){
+const container=document.getElementById('alertContainer');
+const alert=document.createElement('div');
+alert.className='alert '+tipo;
+alert.textContent=mensaje;
+container.innerHTML='';
+container.appendChild(alert);
+setTimeout(()=>alert.remove(),5000);
+}
+
+function cerrarModal(modalId){
+document.getElementById(modalId).classList.add('hidden');
+}
+
+function obtenerBadgeEstado(activo){
+if(activo){
+return'<span class="status-badge status-active">Activo</span>';
+}else{
+return'<span class="status-badge status-inactive">Inactivo</span>';
+}
+}
+
+function obtenerBadgeRol(rolNombre){
+if(rolNombre==='ADMIN'){
+return'<span class="role-badge role-admin">ADMIN</span>';
+}else{
+return'<span class="role-badge role-empleado">EMPLEADO</span>';
+}
+}
+
+function validarFortalezaPassword(password){
+const strength=document.getElementById('passwordStrength')||document.getElementById('editPasswordStrength')||document.getElementById('newPasswordStrength');
+if(!password){
+strength.innerHTML='';
+return;
+}
+
+let score=0;
+if(password.length>=8)score++;
+if(password.match(/[a-z]/))score++;
+if(password.match(/[A-Z]/))score++;
+if(password.match(/[0-9]/))score++;
+if(password.match(/[^A-Za-z0-9]/))score++;
+
+let text='';
+let clase='';
+if(score<2){
+text='Débil';
+clase='weak';
+}else if(score<4){
+text='Media';
+clase='medium';
+}else{
+text='Fuerte';
+clase='strong';
+}
+
+strength.innerHTML='<span class="password-strength '+clase+'">Fortaleza: '+text+'</span>';
+}
+
+async function cargarUsuarios(){
+  try{
+    const list=await apiRequest('GET','/api/usuarios/list-raw?admin=true');
+    const tbody=document.getElementById('usuariosTableBody');
+    tbody.innerHTML='';
+    list.forEach(u=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${u.id||''}</td><td>${u.username||''}</td><td>${u.nombre||''}</td><td>${''}</td><td>${u.rol||''}</td><td>${u.activo?'<span class=\"status-badge status-active\">Activo</span>':'<span class=\"status-badge status-inactive\">Inactivo</span>'}</td><td>${''}</td><td>${''}</td><td><button class='btn small' data-action='edit' data-id='${u.id}'>Editar</button><button class='btn small' data-action='pwd' data-id='${u.id}'>Contraseña</button><button class='btn small' data-action='del' data-id='${u.id}'>Eliminar</button></td>`;tbody.appendChild(tr)})
+  }catch(e){
+    document.getElementById('usuariosTableBody').innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:#666">'+e.message+'</td></tr>';
+  }
+}
+
+// Event listeners
+document.getElementById('btnNuevoUsuario').addEventListener('click',function(){
+document.getElementById('modalNuevoUsuario').classList.remove('hidden');
+});
+
+document.getElementById('formNuevoUsuario').addEventListener('submit',async function(e){
+  e.preventDefault();
+  try{
+    const dto={
+      username:document.getElementById('username').value,
+      password:document.getElementById('password').value,
+      nombre:document.getElementById('nombre').value,
+      rolId:parseInt(document.getElementById('rolId').value,10)
+    };
+    await apiRequest('POST','/api/usuarios?admin=true',dto);
+    cerrarModal('modalNuevoUsuario');
+    cargarUsuarios();
+  }catch(err){mostrarAlerta(err.message,'error')}
+});
+
+document.getElementById('formEditarUsuario').addEventListener('submit',async function(e){
+  e.preventDefault();
+  try{
+    const id=parseInt(document.getElementById('editId').value,10);
+    const dto={
+      username:document.getElementById('editUsername').value,
+      password:document.getElementById('editPassword').value||'',
+      nombre:document.getElementById('editNombre').value,
+      rolId:parseInt(document.getElementById('editRolId').value,10)
+    };
+    await apiRequest('PUT',`/api/usuarios/${id}?admin=true`,dto);
+    cerrarModal('modalEditarUsuario');
+    cargarUsuarios();
+  }catch(err){mostrarAlerta(err.message,'error')}
+});
+
+document.getElementById('formCambiarPassword').addEventListener('submit',async function(e){
+  e.preventDefault();
+  try{
+    const id=parseInt(document.getElementById('changePasswordId').value,10);
+    const newPwd=document.getElementById('newPassword').value;
+    const dto={username:'',password:newPwd,nombre:'',rolId:1};
+    await apiRequest('PUT',`/api/usuarios/${id}?admin=true`,dto);
+    cerrarModal('modalCambiarPassword');
+  }catch(err){mostrarAlerta(err.message,'error')}
+});
+
+// Validación de fortaleza de contraseña
+document.getElementById('password')&&document.getElementById('password').addEventListener('input',function(e){
+validarFortalezaPassword(e.target.value);
+});
+
+document.getElementById('editPassword')&&document.getElementById('editPassword').addEventListener('input',function(e){
+validarFortalezaPassword(e.target.value);
+});
+
+document.getElementById('newPassword')&&document.getElementById('newPassword').addEventListener('input',function(e){
+validarFortalezaPassword(e.target.value);
+});
+
+document.getElementById('usuariosTableBody').addEventListener('click',function(e){
+  const btn=e.target.closest('button');
+  if(!btn)return;
+  const id=parseInt(btn.getAttribute('data-id'),10);
+  const action=btn.getAttribute('data-action');
+  if(action==='edit'){
+    document.getElementById('editId').value=id;
+    document.getElementById('modalEditarUsuario').classList.remove('hidden');
+  } else if(action==='pwd'){
+    document.getElementById('changePasswordId').value=id;
+    document.getElementById('modalCambiarPassword').classList.remove('hidden');
+  } else if(action==='del'){
+    apiRequest('DELETE',`/api/usuarios/${id}?admin=true`).then(()=>cargarUsuarios()).catch(err=>mostrarAlerta(err.message,'error'))
+  }
+});
+
+window.addEventListener('DOMContentLoaded',function(){
+  cargarUsuarios();
+});
+</script>
+</body>
+</html>

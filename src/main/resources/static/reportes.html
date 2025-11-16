@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogiTrack - Reportes del Sistema</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.panel{background:#FFFFFF;border:1px solid #DDDDDD;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:1200px;margin:24px auto;padding:24px}
+.panel h2{margin-top:0;color:#0A1A2F}
+.panel h3{color:#0A1A2F;margin-bottom:16px}
+.table{width:100%;border-collapse:collapse;margin-top:16px}
+.table th,.table td{padding:12px;text-align:left;border-bottom:1px solid #DDDDDD}
+.table th{background:#F5F9FF;color:#0A1A2F;font-weight:600}
+.btn.small{padding:6px 12px;font-size:14px;height:auto}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:4px;font-weight:600;color:#0A1A2F}
+.form-group input,.form-group select{width:100%;padding:8px;border:1px solid #DDDDDD;border-radius:4px}
+.form-actions{display:flex;gap:12px;justify-content:flex-end}
+.alert{padding:12px;border-radius:4px;margin-bottom:16px}
+.alert.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+.alert.error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+.hidden{display:none}
+.report-section{background:#F5F9FF;border:1px solid #DDDDDD;border-radius:6px;padding:20px;margin-bottom:24px}
+.report-section h3{margin-top:0;color:#0A1A2F}
+.report-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:16px}
+.report-stat{background:#FFFFFF;padding:16px;border-radius:4px;text-align:center}
+.report-stat h4{margin:0 0 8px 0;color:#0A1A2F}
+.report-stat .number{font-size:24px;font-weight:bold;color:#13406a}
+.filter-form{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px}
+.filter-form .form-group{flex:1;min-width:200px}
+.export-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:16px}
+</style>
+</head>
+<body>
+<header class="topbar">
+<div class="logo-wrap">
+<img class="logo" src="img/logo.png" alt="LogiTrack">
+</div>
+<div class="user-wrap">
+<span id="welcomeText" class="welcome"></span>
+<button id="logoutBtn" class="btn">Cerrar sesión</button>
+</div>
+</header>
+
+<main class="content">
+<nav class="menu">
+<a href="dashboard.html" class="menu-item">Dashboard</a>
+<a href="bodegas.html" class="menu-item">Bodegas</a>
+<a href="productos.html" class="menu-item">Productos</a>
+<a href="movimientos.html" class="menu-item">Movimientos</a>
+<a href="reportes.html" class="menu-item">Reportes</a>
+<a href="auditoria.html" class="menu-item admin-only">Auditoría</a>
+<a href="usuarios.html" class="menu-item admin-only">Usuarios</a>
+</nav>
+
+<div class="panel">
+<div id="alertContainer"></div>
+
+<h2>Reportes del Sistema</h2>
+
+<!-- Reporte: Productos con stock bajo -->
+<div class="report-section">
+<h3>Productos con Stock Bajo (&lt; 10 unidades)</h3>
+<div class="form-actions">
+<button id="btnActualizarStockBajo" class="btn primary">Actualizar Reporte</button>
+</div>
+<div id="stockBajoContainer">
+<!-- Aquí va el fetch para cargar productos con stock bajo -->
+<table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Nombre</th>
+<th>Categoría</th>
+<th>Stock Actual</th>
+<th>Bodega</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody id="stockBajoTableBody">
+<tr>
+<td colspan="6" style="text-align:center;padding:40px;color:#666">
+No hay productos con stock bajo
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="export-actions">
+<button id="btnExportarStockBajo" class="btn">Exportar a Excel</button>
+</div>
+</div>
+
+<!-- Reporte: Movimientos por rango de fechas -->
+<div class="report-section">
+<h3>Movimientos por Rango de Fechas</h3>
+<div class="filter-form">
+<div class="form-group">
+<label for="movFechaInicio">Fecha Inicio:</label>
+<input type="date" id="movFechaInicio" name="fechaInicio">
+</div>
+<div class="form-group">
+<label for="movFechaFin">Fecha Fin:</label>
+<input type="date" id="movFechaFin" name="fechaFin">
+</div>
+<div class="form-group">
+<label for="movTipo">Tipo de Movimiento:</label>
+<select id="movTipo" name="tipo">
+<option value="">Todos</option>
+<option value="ENTRADA">Entrada</option>
+<option value="SALIDA">Salida</option>
+<option value="TRANSFERENCIA">Transferencia</option>
+</select>
+</div>
+<div class="form-group">
+<button id="btnFiltrarMovimientos" class="btn primary">Generar Reporte</button>
+</div>
+</div>
+<div id="movimientosContainer">
+<!-- Aquí va el fetch para cargar movimientos filtrados -->
+<table class="table">
+<thead>
+<tr>
+<th>Fecha</th>
+<th>Tipo</th>
+<th>Usuario</th>
+<th>Bodega Origen</th>
+<th>Bodega Destino</th>
+<th>Producto</th>
+<th>Cantidad</th>
+</tr>
+</thead>
+<tbody id="movimientosTableBody">
+<tr>
+<td colspan="8" style="text-align:center;padding:40px;color:#666">
+Seleccione un rango de fechas y tipo de movimiento
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="export-actions">
+<button id="btnExportarMovimientos" class="btn">Exportar a Excel</button>
+</div>
+</div>
+
+<!-- Reporte: Auditorías -->
+<div class="report-section admin-only">
+<h3>Auditorías</h3>
+<div class="filter-form">
+<div class="form-group">
+<label for="auditUsuario">Usuario:</label>
+<input type="text" id="auditUsuario" name="usuario" placeholder="Nombre de usuario">
+</div>
+<div class="form-group">
+<label for="auditOperacion">Operación:</label>
+<select id="auditOperacion" name="operacion">
+<option value="">Todas</option>
+<option value="CREATE">Crear</option>
+<option value="UPDATE">Actualizar</option>
+<option value="DELETE">Eliminar</option>
+</select>
+</div>
+<div class="form-group">
+<label for="auditFechaInicio">Fecha Inicio:</label>
+<input type="date" id="auditFechaInicio" name="fechaInicio">
+</div>
+<div class="form-group">
+<label for="auditFechaFin">Fecha Fin:</label>
+<input type="date" id="auditFechaFin" name="fechaFin">
+</div>
+<div class="form-group">
+<button id="btnFiltrarAuditorias" class="btn primary">Generar Reporte</button>
+</div>
+</div>
+<div id="auditoriasContainer">
+<!-- Aquí va el fetch para cargar auditorías filtradas -->
+<table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Fecha</th>
+<th>Usuario</th>
+<th>Operación</th>
+<th>Entidad</th>
+<th>Valores Anteriores</th>
+<th>Valores Nuevos</th>
+</tr>
+</thead>
+<tbody id="auditoriasTableBody">
+<tr>
+<td colspan="7" style="text-align:center;padding:40px;color:#666">
+Seleccione filtros para generar el reporte
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="export-actions">
+<button id="btnExportarAuditorias" class="btn">Exportar a Excel</button>
+</div>
+</div>
+
+<!-- Resumen General -->
+<div class="report-section">
+<h3>Resumen General</h3>
+<div class="form-actions">
+<button id="btnActualizarResumen" class="btn primary">Actualizar Resumen</button>
+</div>
+<div class="report-stats">
+<div class="report-stat">
+<h4>Stock Total</h4>
+<div class="number" id="resumenStockTotal">0</div>
+</div>
+<div class="report-stat">
+<h4>Total Productos</h4>
+<div class="number" id="resumenTotalProductos">0</div>
+</div>
+<div class="report-stat">
+<h4>Total Bodegas</h4>
+<div class="number" id="resumenTotalBodegas">0</div>
+</div>
+<div class="report-stat">
+<h4>Productos Bajo Mínimo</h4>
+<div class="number" id="resumenProductosBajoMinimo">0</div>
+</div>
+<div class="report-stat">
+<h4>Productos Más Movidos</h4>
+<div class="number" id="resumenProductosMasMovidos">0</div>
+</div>
+<div class="report-stat">
+<h4>Total Movimientos Hoy</h4>
+<div class="number" id="resumenMovimientosHoy">0</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+function parseJwt(t){try{const p=t.split('.')[1];const d=JSON.parse(atob(p));return d}catch(e){return null}}
+const token=localStorage.getItem('token');
+if(!token){window.location.href='index.html'}
+const payload=parseJwt(token);
+const name=(payload&&(payload.name||payload.username||payload.sub))||'Usuario';
+const role=payload&&payload.role||'EMPLEADO';
+document.getElementById('welcomeText').textContent='Bienvenido, '+name;
+document.getElementById('logoutBtn').addEventListener('click',function(){localStorage.removeItem('token');localStorage.removeItem('username');window.location.href='index.html'});
+
+// Control de acceso por rol
+if(role!=='ADMIN'){
+document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
+}
+
+// Funciones de utilidad
+function mostrarAlerta(mensaje,tipo='success'){
+const container=document.getElementById('alertContainer');
+const alert=document.createElement('div');
+alert.className='alert '+tipo;
+alert.textContent=mensaje;
+container.innerHTML='';
+container.appendChild(alert);
+setTimeout(()=>alert.remove(),5000);
+}
+
+function exportarAExcel(tablaId,nombreArchivo){
+// Aquí va la función para exportar a Excel
+console.log('Exportando tabla '+tablaId+' como '+nombreArchivo);
+}
+
+// Event listeners
+document.getElementById('btnActualizarStockBajo').addEventListener('click',async function(){
+  try{
+    const list=await apiRequest('GET','/api/productos/stock-bajo');
+    const tbody=document.getElementById('stockBajoTableBody');
+    tbody.innerHTML='';
+    list.forEach(p=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${p.id||''}</td><td>${p.nombre||''}</td><td>${p.categoria||''}</td><td>${p.stock||''}</td><td>${''}</td><td>${p.stock<10?'BAJO':'OK'}</td>`;tbody.appendChild(tr)});
+  }catch(err){}
+});
+
+document.getElementById('btnExportarStockBajo').addEventListener('click',function(){
+exportarAExcel('stockBajoTableBody','reporte_stock_bajo');
+});
+
+document.getElementById('btnFiltrarMovimientos').addEventListener('click',async function(){
+  try{
+    const inicio=document.getElementById('movFechaInicio').value;
+    const fin=document.getElementById('movFechaFin').value;
+    const tipo=document.getElementById('movTipo').value;
+    let list=await apiRequest('GET',`/api/movimientos/por-fecha?inicio=${inicio}&fin=${fin}`);
+    if(tipo){list=list.filter(m=>m.tipo===tipo)}
+    const tbody=document.getElementById('movimientosTableBody');
+    tbody.innerHTML='';
+    list.forEach(m=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${m.fecha||''}</td><td>${m.tipo||''}</td><td>${''}</td><td>${m.bodegaOrigenId||''}</td><td>${m.bodegaDestinoId||''}</td><td>${(m.productos&&m.productos[0]&&m.productos[0].productoId)||''}</td><td>${(m.productos&&m.productos[0]&&m.productos[0].cantidad)||''}</td>`;tbody.appendChild(tr)});
+  }catch(err){}
+});
+
+document.getElementById('btnExportarMovimientos').addEventListener('click',function(){
+exportarAExcel('movimientosTableBody','reporte_movimientos');
+});
+
+document.getElementById('btnFiltrarAuditorias').addEventListener('click',async function(){
+  try{
+    let list=await apiRequest('GET','/api/auditoria');
+    const usuario=document.getElementById('auditUsuario').value.trim();
+    const oper=document.getElementById('auditOperacion').value;
+    const inicio=document.getElementById('auditFechaInicio').value;
+    const fin=document.getElementById('auditFechaFin').value;
+    if(usuario){list=list.filter(a=>a.usuario&&a.usuario.username===usuario)}
+    if(oper){list=list.filter(a=>a.tipoOperacion===oper)}
+    const tbody=document.getElementById('auditoriasTableBody');
+    tbody.innerHTML='';
+    list.forEach(a=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${a.id||''}</td><td>${a.fecha||''}</td><td>${(a.usuario&&a.usuario.username)||''}</td><td>${a.tipoOperacion||''}</td><td>${a.entidad||''}</td><td>${a.valoresAnteriores?JSON.stringify(a.valoresAnteriores):''}</td><td>${a.valoresNuevos?JSON.stringify(a.valoresNuevos):''}</td>`;tbody.appendChild(tr)});
+  }catch(err){}
+});
+
+document.getElementById('btnExportarAuditorias').addEventListener('click',function(){
+exportarAExcel('auditoriasTableBody','reporte_auditorias');
+});
+
+document.getElementById('btnActualizarResumen').addEventListener('click',async function(){
+  try{
+    const r=await apiRequest('GET','/api/reportes/resumen');
+    document.getElementById('resumenStockTotal').textContent=r.stockTotal||0;
+    document.getElementById('resumenTotalProductos').textContent=(r.productosMasMovidos?r.productosMasMovidos.length:0);
+    document.getElementById('resumenTotalBodegas').textContent=r.bodega?1:0;
+    document.getElementById('resumenProductosBajoMinimo').textContent='';
+    document.getElementById('resumenProductosMasMovidos').textContent=(r.productosMasMovidos||[]).length;
+    document.getElementById('resumenMovimientosHoy').textContent='';
+  }catch(err){}
+});
+
+// Cargar datos al iniciar
+window.addEventListener('DOMContentLoaded',function(){
+// Establecer fechas por defecto
+const hoy=new Date().toISOString().split('T')[0];
+const hace30dias=new Date(Date.now()-30*24*60*60*1000).toISOString().split('T')[0];
+document.getElementById('movFechaInicio').value=hace30dias;
+document.getElementById('movFechaFin').value=hoy;
+document.getElementById('auditFechaInicio').value=hace30dias;
+document.getElementById('auditFechaFin').value=hoy;
+
+document.getElementById('btnActualizarResumen').click()
+});
+</script>
+</body>
+</html>
