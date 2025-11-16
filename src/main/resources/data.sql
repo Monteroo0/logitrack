@@ -3,8 +3,8 @@ INSERT INTO rol (nombre) VALUES ('ADMIN'), ('EMPLEADO');
 
 -- Usuarios
 INSERT INTO usuario (username, password, nombre, rol_id) VALUES
-('admin', '$2a$10$adminpasswordhash', 'Administrador', 1),
-('empleado', '$2a$10$empleadopasswordhash', 'Empleado', 2);
+('admin', '$2a$10$2qzzjfXa//.8ywmueOIdNueZ/ETC.wHkNQAVVAPbjwJxJ84kam64K', 'Administrador', 1),
+('empleado', '$2a$10$yuRBKlJ9jVs1oRQNRj8cjOApwDZM3Vc84MKbGMxMF7jU43dzU5NFe', 'Empleado', 2);
 
 -- Bodegas
 INSERT INTO bodega (nombre, ubicacion, capacidad, encargado_id) VALUES
