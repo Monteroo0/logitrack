@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogiTrack - Dashboard</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="topbar">
+<div class="logo-wrap">
+<img class="logo" src="img/logo.png" alt="LogiTrack">
+</div>
+<div class="user-wrap">
+<span id="welcomeText" class="welcome"></span>
+<button id="logoutBtn" class="btn">Cerrar sesión</button>
+</div>
+</header>
+<main class="content">
+<nav class="menu">
+<a href="#" class="menu-item">Bodegas</a>
+<a href="#" class="menu-item">Productos</a>
+<a href="#" class="menu-item">Movimientos</a>
+<a href="#" class="menu-item">Auditoría</a>
+</nav>
+</main>
+<script>
+function parseJwt(t){try{const p=t.split('.')[1];const d=JSON.parse(atob(p));return d;}catch(e){return null}}
+const token=localStorage.getItem('token');
+if(!token){window.location.href='index.html'}
+const payload=parseJwt(token);
+const name=(payload&&(payload.name||payload.username||payload.sub))||'Usuario';
+document.getElementById('welcomeText').textContent='Bienvenido, '+name;
+document.getElementById('logoutBtn').addEventListener('click',function(){localStorage.removeItem('token');localStorage.removeItem('username');window.location.href='index.html'})
+</script>
+</body>
+</html>

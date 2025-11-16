@@ -1,0 +1,1 @@
+document.addEventListener('DOMContentLoaded',function(){var slides=Array.from(document.querySelectorAll('#carousel .slide'));if(!slides.length)return;var i=0;function show(n){slides.forEach(function(s,idx){s.classList.toggle('active',idx===n)})}show(i);setInterval(function(){i=(i+1)%slides.length;show(i)},11000)});

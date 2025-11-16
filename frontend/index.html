@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogiTrack - Login</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="fade-in">
+<header class="topbar">
+<div class="logo-wrap">
+<img class="logo" src="img/logo.png" alt="LogiTrack">
+</div>
+<div class="login-wrap">
+<form id="loginForm" class="login-form">
+<input type="text" id="username" name="username" placeholder="Usuario" required>
+<input type="password" id="password" name="password" placeholder="Contraseña" required>
+<button type="submit" class="btn primary">Ingresar</button>
+</form>
+</div>
+</header>
+<main class="content">
+<section id="carousel" class="carousel">
+<img src="img/camion1.png" alt="Camión 1" class="slide active">
+<img src="img/camion2.png" alt="Camión 2" class="slide">
+<img src="img/camion3.png" alt="Camión 3" class="slide">
+</section>
+</main>
+<div id="errorModal" class="modal hidden">
+<div class="modal-content">
+<div class="modal-header">Error de autenticación</div>
+<div class="modal-body" id="errorText"></div>
+<div class="modal-actions">
+<button id="closeModal" class="btn">Cerrar</button>
+</div>
+</div>
+</div>
+<script src="js/api.js"></script>
+<script src="js/login.js"></script>
+<script src="js/slider.js"></script>
+</body>
+</html>
