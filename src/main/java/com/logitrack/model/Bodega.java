@@ -11,7 +11,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EntityListeners(AuditoriaListener.class)
+
 public class Bodega {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

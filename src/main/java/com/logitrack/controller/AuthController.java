@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -78,5 +79,20 @@ public class AuthController {
     @GetMapping("/ping")
     public ResponseEntity<?> ping() {
         return ResponseEntity.ok(Map.of("status","ok"));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> me() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return ResponseEntity.status(401).body(Map.of("error","Unauthorized"));
+        Object principal = auth.getPrincipal();
+        String username;
+        if (principal instanceof org.springframework.security.core.userdetails.UserDetails u) {
+            username = u.getUsername();
+        } else {
+            username = String.valueOf(principal);
+        }
+        java.util.List<String> roles = auth.getAuthorities().stream().map(a -> a.getAuthority()).toList();
+        return ResponseEntity.ok(Map.of("username", username, "roles", roles));
     }
 }

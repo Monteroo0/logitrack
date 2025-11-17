@@ -19,7 +19,6 @@ public class MovimientoDTO {
     @NotBlank
     private String tipo;
 
-    @NotNull
     private Long usuarioId;
 
     private Long bodegaOrigenId;

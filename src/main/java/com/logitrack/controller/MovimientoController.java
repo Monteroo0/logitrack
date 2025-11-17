@@ -4,10 +4,13 @@ import com.logitrack.dto.MovimientoDTO;
 import com.logitrack.model.Movimiento;
 import com.logitrack.model.MovimientoProducto;
 import com.logitrack.service.MovimientoService;
+import com.logitrack.security.JwtUtil;
+import com.logitrack.repository.UsuarioRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,6 +23,12 @@ public class MovimientoController {
 
     @Autowired
     private MovimientoService movimientoService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @GetMapping
     public List<MovimientoDTO> getAll() {
@@ -34,7 +43,23 @@ public class MovimientoController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody MovimientoDTO dto) {
+    public ResponseEntity<?> create(@Valid @RequestBody MovimientoDTO dto, HttpServletRequest request) {
+        if (dto.getUsuarioId() == null) {
+            String auth = request.getHeader("Authorization");
+            if (auth != null && auth.startsWith("Bearer ")) {
+                String token = auth.substring(7);
+                try {
+                    String username = jwtUtil.extractUsername(token);
+                    if (username != null) {
+                        com.logitrack.model.Usuario u = usuarioRepository.findByUsername(username);
+                        if (u != null) dto.setUsuarioId(u.getId());
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        if (dto.getUsuarioId() == null) {
+            return ResponseEntity.status(401).body(java.util.Map.of("error","Unauthorized"));
+        }
         return movimientoService.createFromDto(dto)
                 .map(m -> ResponseEntity.ok(toDto(m)))
                 .orElse(ResponseEntity.badRequest().build());
@@ -64,10 +89,11 @@ public class MovimientoController {
     }
 
     @GetMapping("/por-fecha")
-    public List<Movimiento> movimientosPorFechas(@RequestParam LocalDate inicio, @RequestParam LocalDate fin) {
+    public List<MovimientoDTO> movimientosPorFechas(@RequestParam LocalDate inicio, @RequestParam LocalDate fin) {
         LocalDateTime startDateTime = inicio.atStartOfDay();
         LocalDateTime endDateTime = fin.atTime(23, 59, 59);
-        return movimientoService.findByFechaBetween(startDateTime, endDateTime);
+        return movimientoService.findByFechaBetween(startDateTime, endDateTime)
+                .stream().map(this::toDto).collect(Collectors.toList());
     }
 
     private MovimientoDTO toDto(Movimiento m) {

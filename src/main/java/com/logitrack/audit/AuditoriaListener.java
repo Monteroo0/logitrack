@@ -11,6 +11,8 @@ import jakarta.persistence.PreUpdate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -70,18 +72,16 @@ public class AuditoriaListener {
             auditoria.setFecha(LocalDateTime.now());
             auditoria.setEntidad(entity.getClass().getSimpleName());
             
-            // Try to get the current user - for now use "system" as fallback
-            String currentUser = "system";
             try {
-                if (usuarioRepository != null) {
-                    // In a real application, you would get the current user from Spring Security context
-                    Usuario usuario = usuarioRepository.findByUsername("admin");
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && usuarioRepository != null) {
+                    String username = auth.getName();
+                    Usuario usuario = usuarioRepository.findByUsername(username);
                     if (usuario != null) {
                         auditoria.setUsuario(usuario);
                     }
                 }
             } catch (Exception e) {
-                // If user lookup fails, continue without user
             }
             
             // Serialize the entity to JSON for the new values

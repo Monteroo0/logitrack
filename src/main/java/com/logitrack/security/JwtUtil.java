@@ -75,4 +75,9 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
+    public String extractClaim(String token, String key) {
+        Object v = getClaims(token).get(key);
+        return v != null ? String.valueOf(v) : null;
+    }
 }

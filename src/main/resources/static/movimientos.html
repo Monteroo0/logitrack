@@ -229,11 +229,7 @@ container.appendChild(alert);
 setTimeout(()=>alert.remove(),5000);
 }
 
-async function obtenerUsuarioId(){
-  const uname=(payload&&(payload.username||payload.sub||name))||'';
-  if(!uname) return null;
-  try{const me=await apiRequest('GET',`/api/usuarios/by-username/${encodeURIComponent(uname)}`);return me.id}catch(e){return null}
-}
+// El backend usará el usuario del JWT si usuarioId no se envía
 
 async function cargarSelects(){
   try{
@@ -248,46 +244,46 @@ async function cargarSelects(){
 
 // Event listeners
 document.getElementById('formEntrada').addEventListener('submit',async function(e){
-  e.preventDefault();
+  e.preventDefault(); e.stopImmediatePropagation();
   try{
-    const usuarioId=await obtenerUsuarioId();
+    console.log('submit Entrada start');
     const dto={
       tipo:'ENTRADA',
-      usuarioId:usuarioId,
       bodegaDestinoId:parseInt(document.getElementById('entradaBodega').value,10),
       productos:[{productoId:parseInt(document.getElementById('entradaProducto').value,10),cantidad:parseInt(document.getElementById('entradaCantidad').value,10)}]
     };
+    console.log('token len', (localStorage.getItem('token')||'').trim().length);
     await apiRequest('POST','/api/movimientos',dto);
     mostrarAlerta('Entrada registrada');
   }catch(err){mostrarAlerta(err.message,'error')}
 });
 
 document.getElementById('formSalida').addEventListener('submit',async function(e){
-  e.preventDefault();
+  e.preventDefault(); e.stopImmediatePropagation();
   try{
-    const usuarioId=await obtenerUsuarioId();
+    console.log('submit Salida start');
     const dto={
       tipo:'SALIDA',
-      usuarioId:usuarioId,
       bodegaOrigenId:parseInt(document.getElementById('salidaBodega').value,10),
       productos:[{productoId:parseInt(document.getElementById('salidaProducto').value,10),cantidad:parseInt(document.getElementById('salidaCantidad').value,10)}]
     };
+    console.log('token len', (localStorage.getItem('token')||'').trim().length);
     await apiRequest('POST','/api/movimientos',dto);
     mostrarAlerta('Salida registrada');
   }catch(err){mostrarAlerta(err.message,'error')}
 });
 
 document.getElementById('formTransferencia').addEventListener('submit',async function(e){
-  e.preventDefault();
+  e.preventDefault(); e.stopImmediatePropagation();
   try{
-    const usuarioId=await obtenerUsuarioId();
+    console.log('submit Transferencia start');
     const dto={
       tipo:'TRANSFERENCIA',
-      usuarioId:usuarioId,
       bodegaOrigenId:parseInt(document.getElementById('transferenciaOrigen').value,10),
       bodegaDestinoId:parseInt(document.getElementById('transferenciaDestino').value,10),
       productos:[{productoId:parseInt(document.getElementById('transferenciaProducto').value,10),cantidad:parseInt(document.getElementById('transferenciaCantidad').value,10)}]
     };
+    console.log('token len', (localStorage.getItem('token')||'').trim().length);
     await apiRequest('POST','/api/movimientos',dto);
     mostrarAlerta('Transferencia registrada');
   }catch(err){mostrarAlerta(err.message,'error')}
@@ -299,7 +295,10 @@ document.getElementById('formFiltros').addEventListener('submit',async function(
     const inicio=document.getElementById('fechaInicio').value;
     const fin=document.getElementById('fechaFin').value;
     const tipo=document.getElementById('tipoMovimiento').value;
-    let list=await apiRequest('GET',`/api/movimientos/por-fecha?inicio=${inicio}&fin=${fin}`);
+    let url='/api/movimientos';
+    if(inicio&&fin){url=`/api/movimientos/por-fecha?inicio=${inicio}&fin=${fin}`}
+    let list=await apiRequest('GET',url);
+    if(!Array.isArray(list)){list=[]}
     if(tipo){list=list.filter(m=>m.tipo===tipo)}
     const tbody=document.getElementById('movimientosTableBody');
     tbody.innerHTML='';

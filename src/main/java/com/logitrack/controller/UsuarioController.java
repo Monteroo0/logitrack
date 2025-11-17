@@ -93,13 +93,35 @@ public class UsuarioController {
         return usuarioService.findById(id)
                 .map(u -> {
                     u.setUsername(dto.getUsername());
-                    u.setPassword(dto.getPassword());
+                    if (dto.getPassword()!=null && !dto.getPassword().isBlank()) {
+                        u.setPassword(dto.getPassword());
+                    }
                     u.setNombre(dto.getNombre());
                     rolRepository.findById(dto.getRolId()).ifPresent(u::setRol);
                     Usuario updated = usuarioService.save(u);
                     return ResponseEntity.ok(toDto(updated));
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/rehash-plaintext")
+    public ResponseEntity<java.util.Map<String,Object>> rehashPlaintext(@RequestParam(required = false) Boolean admin) {
+        if (!isAdmin(admin)) return ResponseEntity.status(403).build();
+        int total = 0;
+        int changed = 0;
+        for (Usuario u : usuarioService.findAll()) {
+            total++;
+            String p = u.getPassword();
+            if (p != null && !p.isBlank() && !(p.startsWith("$2a$")||p.startsWith("$2b$")||p.startsWith("$2y$"))) {
+                u.setPassword(p); // será codificada en usuarioService.save
+                usuarioService.save(u);
+                changed++;
+            }
+        }
+        java.util.Map<String,Object> res = new java.util.HashMap<>();
+        res.put("total", total);
+        res.put("rehash", changed);
+        return ResponseEntity.ok(res);
     }
 
     @DeleteMapping("/{id}")

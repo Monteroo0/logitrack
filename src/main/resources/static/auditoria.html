@@ -76,7 +76,7 @@
 <label for="operacion">Operación:</label>
 <select id="operacion" name="operacion">
 <option value="">Todas</option>
-<option value="CREATE">Crear</option>
+<option value="INSERT">Crear</option>
 <option value="UPDATE">Actualizar</option>
 <option value="DELETE">Eliminar</option>
 </select>
@@ -127,6 +127,49 @@
 <td colspan="9" style="text-align:center;padding:40px;color:#666">
 No se encontraron auditorías
 </td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3 style="margin-top:24px">Consolidado de Movimientos</h3>
+<div id="auditoriasConsolidadasContainer">
+  <table class="table">
+    <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Usuario</th>
+      <th>Tipo</th>
+      <th>Resumen</th>
+    </tr>
+    </thead>
+    <tbody id="auditoriasConsolidadasBody">
+      <tr><td colspan="4" style="text-align:center;padding:40px;color:#666">Cargando consolidado...</td></tr>
+    </tbody>
+  </table>
+  <div class="form-actions" style="margin-top:12px">
+    <button id="btnRefrescarConsolidado" class="btn small">Refrescar</button>
+  </div>
+  </div>
+
+<h3 style="margin-top:24px">Resultados Filtrados</h3>
+<div id="auditoriasFiltradasContainer">
+<table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Fecha</th>
+<th>Usuario</th>
+<th>Operación</th>
+<th>Entidad</th>
+<th>Valores Anteriores</th>
+<th>Valores Nuevos</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="auditoriasFiltradasBody">
+<tr>
+<td colspan="8" style="text-align:center;padding:40px;color:#666">Sin filtros aplicados</td>
 </tr>
 </tbody>
 </table>
@@ -294,9 +337,27 @@ console.log('Exportando auditoría a PDF');
 }
 
 // Event listeners
-document.getElementById('formFiltros').addEventListener('submit',function(e){
-e.preventDefault();
-// Aquí va el fetch para filtrar auditorías
+document.getElementById('formFiltros').addEventListener('submit',async function(e){
+  e.preventDefault();
+  try{
+    const usuario=document.getElementById('usuario').value.trim();
+    const tipo=document.getElementById('operacion').value;
+    const inicio=document.getElementById('fechaInicio').value;
+    const fin=document.getElementById('fechaFin').value;
+    const params=new URLSearchParams();
+    if(usuario)params.append('usuario',usuario);
+    if(tipo)params.append('tipo',tipo);
+    if(inicio&&fin){params.append('inicio',inicio);params.append('fin',fin)}
+    const list=await apiRequest('GET','/api/auditoria/filtrar?'+params.toString());
+    const tbody=document.getElementById('auditoriasFiltradasBody');
+    tbody.innerHTML='';
+    (Array.isArray(list)?list:[]).forEach(a=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${a.id||''}</td><td>${a.fecha||''}</td><td>${(a.usuario&&a.usuario.username)||''}</td><td>${a.tipoOperacion||''}</td><td>${a.entidad||''}</td><td>${a.valoresAnteriores?JSON.stringify(a.valoresAnteriores):''}</td><td>${a.valoresNuevos?JSON.stringify(a.valoresNuevos):''}</td><td><button class='btn tiny' data-id='${a.id}'>Ver</button></td>`;
+      tbody.appendChild(tr);
+    });
+    if(!tbody.children.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:#666">No se encontraron auditorías</td></tr>'}
+  }catch(err){mostrarAlerta(err.message,'error')}
 });
 
 document.getElementById('btnLimpiarFiltros').addEventListener('click',function(){
@@ -320,8 +381,37 @@ const hace30dias=new Date(Date.now()-30*24*60*60*1000).toISOString().split('T')[
 document.getElementById('fechaInicio').value=hace30dias;
 document.getElementById('fechaFin').value=hoy;
 
-  try{const list=await apiRequest('GET','/api/auditoria');const tbody=document.getElementById('auditoriasTableBody');tbody.innerHTML='';list.forEach(a=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${a.id||''}</td><td>${a.fecha||''}</td><td>${(a.usuario&&a.usuario.username)||''}</td><td>${a.tipoOperacion||''}</td><td>${a.entidad||''}</td><td>${a.valoresAnteriores?JSON.stringify(a.valoresAnteriores):''}</td><td>${a.valoresNuevos?JSON.stringify(a.valoresNuevos):''}</td><td><button class='btn tiny' data-id='${a.id}'>Ver</button></td>`;tbody.appendChild(tr)})}catch(err){}
+  try{
+    const list=await apiRequest('GET','/api/auditoria');
+    const tbody=document.getElementById('auditoriasTableBody');
+    tbody.innerHTML='';
+    (Array.isArray(list)?list:[]).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).forEach(a=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${a.id||''}</td><td>${a.fecha||''}</td><td>${(a.usuario&&a.usuario.username)||''}</td><td>${a.tipoOperacion||''}</td><td>${a.entidad||''}</td><td>${a.valoresAnteriores?JSON.stringify(a.valoresAnteriores):''}</td><td>${a.valoresNuevos?JSON.stringify(a.valoresNuevos):''}</td><td><button class='btn tiny' data-id='${a.id}'>Ver</button></td>`;
+      tbody.appendChild(tr)
+    })
+    if(!tbody.children.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:#666">No se encontraron auditorías</td></tr>'}
+  }catch(err){}
+
+  try{
+    await cargarConsolidado();
+  }catch(err){mostrarAlerta(err.message,'error')}
 });
+
+async function cargarConsolidado(){
+  const tbody=document.getElementById('auditoriasConsolidadasBody');
+  tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:12px;color:#666">Cargando consolidado...</td></tr>';
+  const list=await apiRequest('GET','/api/auditoria/consolidado');
+  tbody.innerHTML='';
+  (Array.isArray(list)?list:[]).forEach(a=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${a.fecha||''}</td><td>${a.usuario||''}</td><td>${a.tipo||''}</td><td>${a.resumen||''}</td>`;
+    tbody.appendChild(tr);
+  });
+  if(!tbody.children.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:40px;color:#666">No hay registros consolidados</td></tr>'}
+}
+
+document.getElementById('btnRefrescarConsolidado').addEventListener('click',function(){cargarConsolidado()});
 </script>
 </body>
 </html>

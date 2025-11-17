@@ -46,11 +46,12 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/img/**", "/favicon.ico", "/manifest.json", "/site.webmanifest", "/robots.txt").permitAll()
-                .requestMatchers("/auth/login", "/auth/register", "/auth/ping", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/util/hash", "/util/check", "/util/token").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/auditoria/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN","EMPLEADO")
-                .requestMatchers("/api/movimientos/**").hasAnyRole("ADMIN","EMPLEADO")
-                .requestMatchers("/api/**").hasRole("ADMIN")
+                .requestMatchers("/auth/login", "/auth/register", "/auth/ping", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/bodegas/**", "/api/productos/**").permitAll()
+                .requestMatchers("/api/auditoria/**").hasRole("ADMIN")
+                .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+                .requestMatchers("/api/movimientos/**").authenticated()
                 .anyRequest().authenticated()
             )
             .userDetailsService(userDetailsService)
@@ -61,12 +62,18 @@ public class SecurityConfig {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return web -> web.ignoring().requestMatchers("/css/**", "/js/**", "/img/**", "/*.html", "/favicon.ico", "/manifest.json", "/site.webmanifest", "/robots.txt");
+        return web -> web.ignoring().requestMatchers(
+                "/css/**", "/js/**", "/img/**", "/*.html", "/favicon.ico", "/manifest.json", "/site.webmanifest", "/robots.txt"
+        );
     }
 
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> {
+            try {
+                String h = request.getHeader("Authorization");
+                System.out.println("401 Unauthorized -> " + request.getMethod() + " " + request.getRequestURI() + ", authHeader=" + (h!=null?h.substring(0, Math.min(h.length(), 80)):"<none>"));
+            } catch (Exception ignored) {}
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setContentType("application/json");
             response.getWriter().write("{\"error\":\"Unauthorized\"}");
@@ -76,6 +83,10 @@ public class SecurityConfig {
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
+            try {
+                String h = request.getHeader("Authorization");
+                System.out.println("403 Forbidden -> " + request.getMethod() + " " + request.getRequestURI() + ", authHeader=" + (h!=null?h.substring(0, Math.min(h.length(), 80)):"<none>"));
+            } catch (Exception ignored) {}
             response.setStatus(HttpStatus.FORBIDDEN.value());
             response.setContentType("application/json");
             response.getWriter().write("{\"error\":\"Forbidden\"}");

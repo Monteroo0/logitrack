@@ -9,7 +9,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EntityListeners(AuditoriaListener.class)
+
 public class Producto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
