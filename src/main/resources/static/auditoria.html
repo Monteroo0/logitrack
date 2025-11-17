@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LogiTrack - Auditoría del Sistema</title>
 <link rel="stylesheet" href="css/styles.css">
+<link rel="icon" type="image/x-icon" href="img/favicon.ico">
 <style>
 .panel{background:#FFFFFF;border:1px solid #DDDDDD;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:1400px;margin:24px auto;padding:24px}
 .panel h2{margin-top:0;color:#0A1A2F}
@@ -82,6 +83,15 @@
 </select>
 </div>
 <div class="form-group">
+<label for="tipoMovimiento">Tipo de Movimiento:</label>
+<select id="tipoMovimiento" name="tipoMovimiento">
+<option value="">Todos</option>
+<option value="ENTRADA">Entrada</option>
+<option value="SALIDA">Salida</option>
+<option value="TRANSFERENCIA">Transferencia</option>
+</select>
+</div>
+<div class="form-group">
 <label for="entidad">Entidad:</label>
 <select id="entidad" name="entidad">
 <option value="">Todas</option>
@@ -134,6 +144,23 @@ No se encontraron auditorías
 
 <h3 style="margin-top:24px">Consolidado de Movimientos</h3>
 <div id="auditoriasConsolidadasContainer">
+  <div class="report-section" style="margin-bottom:16px">
+    <h3 style="margin-top:0">Resumen Consolidado</h3>
+    <div class="report-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+      <div class="report-stat"><h4>Entradas</h4><div class="number" id="consTotalesEntrada">0</div></div>
+      <div class="report-stat"><h4>Salidas</h4><div class="number" id="consTotalesSalida">0</div></div>
+      <div class="report-stat"><h4>Transferencias</h4><div class="number" id="consTotalesTransferencia">0</div></div>
+      <div class="report-stat"><h4>Total Movimientos</h4><div class="number" id="consTotalMovimientos">0</div></div>
+      <div class="report-stat"><h4>Promedio/Día</h4><div class="number" id="consPromedioDia">0</div></div>
+      <div class="report-stat"><h4>Máx/Día</h4><div class="number" id="consMaxDia">0</div></div>
+      <div class="report-stat"><h4>Min/Día</h4><div class="number" id="consMinDia">0</div></div>
+    </div>
+    <div id="consTrend" style="margin-top:12px"></div>
+    <div class="form-actions" style="margin-top:12px">
+      <button id="btnExportConsolidadoXlsx" class="btn small">Exportar Consolidado Excel</button>
+      <button id="btnExportConsolidadoCsv" class="btn small">Exportar Consolidado CSV</button>
+    </div>
+  </div>
   <table class="table">
     <thead>
     <tr>
@@ -170,6 +197,30 @@ No se encontraron auditorías
 <tbody id="auditoriasFiltradasBody">
 <tr>
 <td colspan="8" style="text-align:center;padding:40px;color:#666">Sin filtros aplicados</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3 style="margin-top:24px">Movimientos Filtrados</h3>
+<div id="movimientosFiltradosContainer">
+<table class="table">
+<thead>
+<tr>
+<th>ID Movimiento</th>
+<th>Fecha</th>
+<th>Usuario</th>
+<th>Tipo</th>
+<th>Origen</th>
+<th>Destino</th>
+<th>Producto</th>
+<th>Cantidad</th>
+<th>Observaciones</th>
+</tr>
+</thead>
+<tbody id="movimientosFiltradosBody">
+<tr>
+<td colspan="9" style="text-align:center;padding:40px;color:#666">Sin filtros aplicados</td>
 </tr>
 </tbody>
 </table>
@@ -342,21 +393,40 @@ document.getElementById('formFiltros').addEventListener('submit',async function(
   try{
     const usuario=document.getElementById('usuario').value.trim();
     const tipo=document.getElementById('operacion').value;
+    const tipoMovimiento=document.getElementById('tipoMovimiento').value;
     const inicio=document.getElementById('fechaInicio').value;
     const fin=document.getElementById('fechaFin').value;
     const params=new URLSearchParams();
     if(usuario)params.append('usuario',usuario);
-    if(tipo)params.append('tipo',tipo);
+    if(tipo)params.append('operacion',tipo);
+    if(tipoMovimiento)params.append('tipoMovimiento',tipoMovimiento);
     if(inicio&&fin){params.append('inicio',inicio);params.append('fin',fin)}
-    const list=await apiRequest('GET','/api/auditoria/filtrar?'+params.toString());
+    const mixed=await apiRequest('GET','/api/auditoria/filtrar-mixto?'+params.toString());
+    const aList=Array.isArray(mixed.auditorias)?mixed.auditorias:[];
+    const mList=Array.isArray(mixed.movimientos)?mixed.movimientos:[];
     const tbody=document.getElementById('auditoriasFiltradasBody');
     tbody.innerHTML='';
-    (Array.isArray(list)?list:[]).forEach(a=>{
+    aList.forEach(a=>{
+      let entidadId='';
+      try{
+        const vn=typeof a.valoresNuevos==='string'?JSON.parse(a.valoresNuevos):a.valoresNuevos;
+        const va=typeof a.valoresAnteriores==='string'?JSON.parse(a.valoresAnteriores):a.valoresAnteriores;
+        entidadId = (vn&& (vn.movimientoId||vn.id)) || (va&& va.id) || '';
+      }catch(e){}
       const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${a.id||''}</td><td>${a.fecha||''}</td><td>${(a.usuario&&a.usuario.username)||''}</td><td>${a.tipoOperacion||''}</td><td>${a.entidad||''}</td><td>${a.valoresAnteriores?JSON.stringify(a.valoresAnteriores):''}</td><td>${a.valoresNuevos?JSON.stringify(a.valoresNuevos):''}</td><td><button class='btn tiny' data-id='${a.id}'>Ver</button></td>`;
+      tr.innerHTML=`<td>${a.id||''}</td><td>${a.fecha||''}</td><td>${(a.usuario&&a.usuario.username)||''}</td><td>${a.tipoOperacion||''}</td><td>${a.entidad||''}</td><td>${entidadId}</td><td>${a.valoresAnteriores?JSON.stringify(a.valoresAnteriores):''}</td><td>${a.valoresNuevos?JSON.stringify(a.valoresNuevos):''}</td><td><button class='btn tiny' data-id='${a.id}'>Ver</button></td>`;
       tbody.appendChild(tr);
     });
     if(!tbody.children.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:#666">No se encontraron auditorías</td></tr>'}
+
+    const mtbody=document.getElementById('movimientosFiltradosBody');
+    mtbody.innerHTML='';
+    mList.forEach(m=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${m.id||''}</td><td>${m.fecha||''}</td><td>${m.usuario||''}</td><td>${m.tipo||''}</td><td>${m.bodegaOrigen||''}</td><td>${m.bodegaDestino||''}</td><td>${m.producto||''}</td><td>${m.cantidad||''}</td><td>${m.observaciones||''}</td>`;
+      mtbody.appendChild(tr);
+    });
+    if(!mtbody.children.length){mtbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:#666">No se encontraron movimientos</td></tr>'}
   }catch(err){mostrarAlerta(err.message,'error')}
 });
 
@@ -366,11 +436,61 @@ document.getElementById('formFiltros').reset();
 });
 
 document.getElementById('btnExportarAuditorias').addEventListener('click',function(){
-exportarAExcel('auditoriasTableBody','reporte_auditorias');
+  (async function(){
+    try{
+      const usuario=document.getElementById('usuario').value.trim();
+      const operacion=document.getElementById('operacion').value;
+      const entidad=document.getElementById('entidad').value;
+      const inicio=document.getElementById('fechaInicio').value;
+      const fin=document.getElementById('fechaFin').value;
+      const tipoMovimiento=document.getElementById('tipoMovimiento').value;
+      const params=new URLSearchParams();
+      if(usuario)params.append('usuario',usuario);
+      if(operacion)params.append('operacion',operacion);
+      if(entidad)params.append('entidad',entidad);
+      if(inicio&&fin){params.append('inicio',inicio);params.append('fin',fin)}
+      if(tipoMovimiento)params.append('tipoMovimiento',tipoMovimiento);
+      const url='/api/auditoria/export.xlsx?'+params.toString();
+      const resp=await fetch(url,{headers:{'Authorization':'Bearer '+(localStorage.getItem('token')||'')}});
+      if(!resp.ok){return mostrarAlerta('No autorizado o error al exportar','error')}
+      const blob=await resp.blob();
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='auditoria.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }catch(e){mostrarAlerta('No se pudo exportar','error')}
+  })();
 });
 
 document.getElementById('btnExportarPDF').addEventListener('click',function(){
-exportarAPDF();
+  (async function(){
+    try{
+      const usuario=document.getElementById('usuario').value.trim();
+      const operacion=document.getElementById('operacion').value;
+      const entidad=document.getElementById('entidad').value;
+      const inicio=document.getElementById('fechaInicio').value;
+      const fin=document.getElementById('fechaFin').value;
+      const tipoMovimiento=document.getElementById('tipoMovimiento').value;
+      const params=new URLSearchParams();
+      if(usuario)params.append('usuario',usuario);
+      if(operacion)params.append('operacion',operacion);
+      if(entidad)params.append('entidad',entidad);
+      if(inicio&&fin){params.append('inicio',inicio);params.append('fin',fin)}
+      if(tipoMovimiento)params.append('tipoMovimiento',tipoMovimiento);
+      const url='/api/auditoria/export.pdf?'+params.toString();
+      const resp=await fetch(url,{headers:{'Authorization':'Bearer '+(localStorage.getItem('token')||'')}});
+      if(!resp.ok){return mostrarAlerta('No autorizado o error al exportar','error')}
+      const blob=await resp.blob();
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='auditoria.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }catch(e){mostrarAlerta('No se pudo exportar','error')}
+  })();
 });
 
 // Cargar auditorías al iniciar
@@ -386,8 +506,14 @@ document.getElementById('fechaFin').value=hoy;
     const tbody=document.getElementById('auditoriasTableBody');
     tbody.innerHTML='';
     (Array.isArray(list)?list:[]).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).forEach(a=>{
+      let entidadId='';
+      try{
+        const vn=typeof a.valoresNuevos==='string'?JSON.parse(a.valoresNuevos):a.valoresNuevos;
+        const va=typeof a.valoresAnteriores==='string'?JSON.parse(a.valoresAnteriores):a.valoresAnteriores;
+        entidadId = (vn&& (vn.movimientoId||vn.id)) || (va&& va.id) || '';
+      }catch(e){}
       const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${a.id||''}</td><td>${a.fecha||''}</td><td>${(a.usuario&&a.usuario.username)||''}</td><td>${a.tipoOperacion||''}</td><td>${a.entidad||''}</td><td>${a.valoresAnteriores?JSON.stringify(a.valoresAnteriores):''}</td><td>${a.valoresNuevos?JSON.stringify(a.valoresNuevos):''}</td><td><button class='btn tiny' data-id='${a.id}'>Ver</button></td>`;
+      tr.innerHTML=`<td>${a.id||''}</td><td>${a.fecha||''}</td><td>${(a.usuario&&a.usuario.username)||''}</td><td>${a.tipoOperacion||''}</td><td>${a.entidad||''}</td><td>${entidadId}</td><td>${a.valoresAnteriores?JSON.stringify(a.valoresAnteriores):''}</td><td>${a.valoresNuevos?JSON.stringify(a.valoresNuevos):''}</td><td><button class='btn tiny' data-id='${a.id}'>Ver</button></td>`;
       tbody.appendChild(tr)
     })
     if(!tbody.children.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:#666">No se encontraron auditorías</td></tr>'}
@@ -396,6 +522,7 @@ document.getElementById('fechaFin').value=hoy;
   try{
     await cargarConsolidado();
   }catch(err){mostrarAlerta(err.message,'error')}
+  try{if(localStorage.getItem('refresh_auditoria')==='1'){await cargarResumenConsolidado();await cargarConsolidado();localStorage.removeItem('refresh_auditoria')}}catch(e){}
 });
 
 async function cargarConsolidado(){
@@ -412,6 +539,86 @@ async function cargarConsolidado(){
 }
 
 document.getElementById('btnRefrescarConsolidado').addEventListener('click',function(){cargarConsolidado()});
+
+async function cargarResumenConsolidado(){
+  try{
+    const r=await apiRequest('GET','/api/auditoria/consolidado/resumen');
+    const t=r.totalesPorTipo||{};
+    document.getElementById('consTotalesEntrada').textContent=t.ENTRADA||0;
+    document.getElementById('consTotalesSalida').textContent=t.SALIDA||0;
+    document.getElementById('consTotalesTransferencia').textContent=t.TRANSFERENCIA||0;
+    document.getElementById('consTotalMovimientos').textContent=r.totalMovimientos||0;
+    const ind=r.indicadores||{};
+    document.getElementById('consPromedioDia').textContent=(ind.promedioDia||0).toFixed(2);
+    document.getElementById('consMaxDia').textContent=ind.maxDia||0;
+    document.getElementById('consMinDia').textContent=ind.minDia||0;
+    const trend=document.getElementById('consTrend');
+    trend.innerHTML='';
+    const serie=Array.isArray(r.porPeriodo)?r.porPeriodo:[];
+    const maxVal=Math.max(...serie.map(s=>s.total||0),1);
+    serie.forEach(s=>{
+      const bar=document.createElement('div');
+      bar.style.height='16px';
+      bar.style.margin='4px 0';
+      bar.style.background='#13406a';
+      bar.style.width=((s.total||0)/maxVal*100)+'%';
+      bar.title=(s.periodo||'')+': '+(s.total||0);
+      const wrap=document.createElement('div');
+      wrap.style.display='flex';
+      wrap.style.alignItems='center';
+      const label=document.createElement('span');
+      label.style.display='inline-block';
+      label.style.width='120px';
+      label.style.fontSize='12px';
+      label.style.color='#333';
+      label.textContent=s.periodo||'';
+      const value=document.createElement('span');
+      value.style.marginLeft='8px';
+      value.style.fontSize='12px';
+      value.textContent=s.total||0;
+      wrap.appendChild(label);
+      const barWrap=document.createElement('div');
+      barWrap.style.flex='1';
+      barWrap.style.background='#e6eef7';
+      barWrap.appendChild(bar);
+      wrap.appendChild(barWrap);
+      wrap.appendChild(value);
+      trend.appendChild(wrap);
+    })
+  }catch(e){mostrarAlerta('No se pudo cargar el resumen consolidado','error')}
+}
+
+document.getElementById('btnExportConsolidadoXlsx').addEventListener('click',async function(){
+  try{
+    const url='/api/auditoria/consolidado/export.xlsx';
+    const resp=await fetch(url,{headers:{'Authorization':'Bearer '+(localStorage.getItem('token')||'')}});
+    if(!resp.ok){return mostrarAlerta('No autorizado o error al exportar','error')}
+    const blob=await resp.blob();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='consolidado_auditoria.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }catch(e){mostrarAlerta('No se pudo exportar','error')}
+});
+
+document.getElementById('btnExportConsolidadoCsv').addEventListener('click',async function(){
+  try{
+    const url='/api/auditoria/consolidado/export.csv';
+    const resp=await fetch(url,{headers:{'Authorization':'Bearer '+(localStorage.getItem('token')||'')}});
+    if(!resp.ok){return mostrarAlerta('No autorizado o error al exportar','error')}
+    const blob=await resp.blob();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='consolidado_auditoria.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }catch(e){mostrarAlerta('No se pudo exportar','error')}
+});
+
+window.addEventListener('DOMContentLoaded',function(){cargarResumenConsolidado()});
 </script>
 </body>
 </html>

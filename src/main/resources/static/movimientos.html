@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LogiTrack - Movimientos de Inventario</title>
 <link rel="stylesheet" href="css/styles.css">
+<link rel="icon" type="image/x-icon" href="img/favicon.ico">
 <style>
 .panel{background:#FFFFFF;border:1px solid #DDDDDD;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:1200px;margin:24px auto;padding:24px}
 .panel h2{margin-top:0;color:#0A1A2F}
@@ -217,6 +218,7 @@ document.getElementById('formEntrada').addEventListener('submit',async function(
     };
     console.log('token len', (localStorage.getItem('token')||'').trim().length);
     await apiRequest('POST','/api/movimientos',dto);
+    try{localStorage.setItem('refresh_reports','1');localStorage.setItem('refresh_auditoria','1')}catch(e){}
     mostrarAlerta('Entrada registrada');
   }catch(err){mostrarAlerta(err.message,'error')}
 });
@@ -233,6 +235,7 @@ document.getElementById('formSalida').addEventListener('submit',async function(e
     };
     console.log('token len', (localStorage.getItem('token')||'').trim().length);
     await apiRequest('POST','/api/movimientos',dto);
+    try{localStorage.setItem('refresh_reports','1');localStorage.setItem('refresh_auditoria','1')}catch(e){}
     mostrarAlerta('Salida registrada');
   }catch(err){mostrarAlerta(err.message,'error')}
 });
@@ -250,6 +253,7 @@ document.getElementById('formTransferencia').addEventListener('submit',async fun
     };
     console.log('token len', (localStorage.getItem('token')||'').trim().length);
     await apiRequest('POST','/api/movimientos',dto);
+    try{localStorage.setItem('refresh_reports','1');localStorage.setItem('refresh_auditoria','1')}catch(e){}
     mostrarAlerta('Transferencia registrada');
   }catch(err){mostrarAlerta(err.message,'error')}
 });

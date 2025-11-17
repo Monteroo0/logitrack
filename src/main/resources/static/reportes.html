@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LogiTrack - Reportes del Sistema</title>
 <link rel="stylesheet" href="css/styles.css">
+<link rel="icon" type="image/x-icon" href="img/favicon.ico">
 <style>
 .panel{background:#FFFFFF;border:1px solid #DDDDDD;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:1200px;margin:24px auto;padding:24px}
 .panel h2{margin-top:0;color:#0A1A2F}
@@ -156,6 +157,8 @@ Seleccione un rango de fechas y tipo de movimiento
 </div>
 </div>
 
+<!-- Consolidado de Movimientos -->
+
 <!-- Sección Auditorías removida; usar módulo dedicado -->
 
 <!-- Resumen General -->
@@ -227,7 +230,8 @@ console.log('Exportando tabla '+tablaId+' como '+nombreArchivo);
 }
 
 // Event listeners
-document.getElementById('btnActualizarStockBajo').addEventListener('click',async function(){
+const btnActualizarStockBajo=document.getElementById('btnActualizarStockBajo');
+if(btnActualizarStockBajo)btnActualizarStockBajo.addEventListener('click',async function(){
   try{
     const list=await apiRequest('GET','/api/productos/stock-bajo');
     const tbody=document.getElementById('stockBajoTableBody');
@@ -236,11 +240,13 @@ document.getElementById('btnActualizarStockBajo').addEventListener('click',async
   }catch(err){}
 });
 
-document.getElementById('btnExportarStockBajo').addEventListener('click',function(){
+const btnExportarStockBajo=document.getElementById('btnExportarStockBajo');
+if(btnExportarStockBajo)btnExportarStockBajo.addEventListener('click',function(){
 exportarAExcel('stockBajoTableBody','reporte_stock_bajo');
 });
 
-document.getElementById('btnFiltrarMovimientos').addEventListener('click',async function(){
+const btnFiltrarMovimientos=document.getElementById('btnFiltrarMovimientos');
+if(btnFiltrarMovimientos)btnFiltrarMovimientos.addEventListener('click',async function(){
   try{
     const inicio=document.getElementById('movFechaInicio').value;
     const fin=document.getElementById('movFechaFin').value;
@@ -257,7 +263,8 @@ document.getElementById('btnFiltrarMovimientos').addEventListener('click',async 
   }catch(err){mostrarAlerta('Error al generar el reporte','error')}
 });
 
-document.getElementById('btnExportarMovimientos').addEventListener('click',async function(){
+const btnExportarMovimientos=document.getElementById('btnExportarMovimientos');
+if(btnExportarMovimientos)btnExportarMovimientos.addEventListener('click',async function(){
   try{
     const inicio=document.getElementById('movFechaInicio').value;
     const fin=document.getElementById('movFechaFin').value;
@@ -277,35 +284,24 @@ document.getElementById('btnExportarMovimientos').addEventListener('click',async
   }catch(e){mostrarAlerta('No se pudo exportar','error')}
 });
 
-document.getElementById('btnFiltrarAuditorias').addEventListener('click',async function(){
-  try{
-    let list=await apiRequest('GET','/api/auditoria');
-    const usuario=document.getElementById('auditUsuario').value.trim();
-    const oper=document.getElementById('auditOperacion').value;
-    const inicio=document.getElementById('auditFechaInicio').value;
-    const fin=document.getElementById('auditFechaFin').value;
-    if(usuario){list=list.filter(a=>a.usuario&&a.usuario.username===usuario)}
-    if(oper){list=list.filter(a=>a.tipoOperacion===oper)}
-    const tbody=document.getElementById('auditoriasTableBody');
-    tbody.innerHTML='';
-    list.forEach(a=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${a.id||''}</td><td>${a.fecha||''}</td><td>${(a.usuario&&a.usuario.username)||''}</td><td>${a.tipoOperacion||''}</td><td>${a.entidad||''}</td><td>${a.valoresAnteriores?JSON.stringify(a.valoresAnteriores):''}</td><td>${a.valoresNuevos?JSON.stringify(a.valoresNuevos):''}</td>`;tbody.appendChild(tr)});
-  }catch(err){}
-});
 
-document.getElementById('btnExportarAuditorias').addEventListener('click',function(){
-exportarAExcel('auditoriasTableBody','reporte_auditorias');
-});
+// Auditoría filtros eliminados en esta página
 
-document.getElementById('btnActualizarResumen').addEventListener('click',async function(){
+
+
+const btnActualizarResumen=document.getElementById('btnActualizarResumen');
+if(btnActualizarResumen)btnActualizarResumen.addEventListener('click',async function(){
   try{
+    console.log('Actualizar Resumen pulsado');
     const r=await apiRequest('GET','/api/reportes/resumen');
+    try{console.log('Resumen recibido', r)}catch(e){}
     document.getElementById('resumenStockTotal').textContent=r.stockTotal||0;
-    document.getElementById('resumenTotalProductos').textContent=(r.productosMasMovidos?r.productosMasMovidos.length:0);
-    document.getElementById('resumenTotalBodegas').textContent=r.bodega?1:0;
-    document.getElementById('resumenProductosBajoMinimo').textContent='';
+    document.getElementById('resumenTotalProductos').textContent=r.totalProductos||0;
+    document.getElementById('resumenTotalBodegas').textContent=r.totalBodegas||0;
+    document.getElementById('resumenProductosBajoMinimo').textContent=r.productosBajoMinimo||0;
     document.getElementById('resumenProductosMasMovidos').textContent=(r.productosMasMovidos||[]).length;
-    document.getElementById('resumenMovimientosHoy').textContent='';
-  }catch(err){}
+    document.getElementById('resumenMovimientosHoy').textContent=r.movimientosHoy||0;
+  }catch(err){mostrarAlerta('No se pudo cargar el resumen','error')}
 });
 
 // Cargar datos al iniciar
@@ -315,10 +311,10 @@ const hoy=new Date().toISOString().split('T')[0];
 const hace30dias=new Date(Date.now()-30*24*60*60*1000).toISOString().split('T')[0];
 document.getElementById('movFechaInicio').value=hace30dias;
 document.getElementById('movFechaFin').value=hoy;
-document.getElementById('auditFechaInicio').value=hace30dias;
-document.getElementById('auditFechaFin').value=hoy;
+// Se removió el filtro de auditoría en esta página
 
-document.getElementById('btnActualizarResumen').click()
+document.getElementById('btnActualizarResumen').click();
+try{if(localStorage.getItem('refresh_reports')==='1'){document.getElementById('btnActualizarResumen').click();localStorage.removeItem('refresh_reports')}}catch(e){}
 });
 </script>
 </body>

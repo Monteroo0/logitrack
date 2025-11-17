@@ -28,52 +28,44 @@ public class ReporteService {
 
     public Map<String, Object> generarResumenReporte(String bodegaNombre) {
         Map<String, Object> reporte = new HashMap<>();
-        
-        // Obtener bodega por nombre o usar la primera disponible
         Bodega bodega = bodegaRepository.findAll().stream()
                 .filter(b -> b.getNombre().equalsIgnoreCase(bodegaNombre))
                 .findFirst()
                 .orElse(bodegaRepository.findAll().stream().findFirst().orElse(null));
-        
-        if (bodega != null) {
-            reporte.put("bodega", bodega.getNombre() + " " + bodega.getUbicacion());
-        } else {
-            reporte.put("bodega", "No disponible");
-        }
-        
-        // Calcular stock total
+        reporte.put("bodega", bodega != null ? (bodega.getNombre() + " " + bodega.getUbicacion()) : "No disponible");
+        List<Bodega> bodegas = bodegaRepository.findAll();
         List<Producto> productos = productoRepository.findAll();
-        int stockTotal = productos.stream()
-                .mapToInt(Producto::getStock)
-                .sum();
-        reporte.put("stockTotal", stockTotal);
-        
-        // Obtener productos más movidos en el último mes
+        int stockTotal = productos.stream().mapToInt(Producto::getStock).sum();
+        int totalProductos = productos.size();
+        int totalBodegas = bodegas.size();
+        int productosBajoMinimo = (int) productos.stream().filter(p -> p.getStock() < 10).count();
+        LocalDateTime hoyInicio = java.time.LocalDate.now().atStartOfDay();
+        LocalDateTime hoyFin = java.time.LocalDate.now().atTime(23,59,59);
+        int movimientosHoy = movimientoRepository.findByFechaBetween(hoyInicio, hoyFin).size();
         LocalDateTime haceUnMes = LocalDateTime.now().minusMonths(1);
         List<Movimiento> movimientosRecientes = movimientoRepository.findByFechaBetween(haceUnMes, LocalDateTime.now());
-        
         Map<String, Integer> productoMovimientos = new HashMap<>();
         for (Movimiento movimiento : movimientosRecientes) {
             if (movimiento.getProductos() != null) {
                 for (MovimientoProducto mp : movimiento.getProductos()) {
                     if (mp.getProducto() != null) {
                         String nombreProducto = mp.getProducto().getNombre();
-                        productoMovimientos.put(nombreProducto, 
-                            productoMovimientos.getOrDefault(nombreProducto, 0) + mp.getCantidad());
+                        productoMovimientos.put(nombreProducto, productoMovimientos.getOrDefault(nombreProducto, 0) + mp.getCantidad());
                     }
                 }
             }
         }
-        
-        // Obtener los 5 productos más movidos
         List<String> productosMasMovidos = productoMovimientos.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(5)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
-        
+        reporte.put("stockTotal", stockTotal);
+        reporte.put("totalProductos", totalProductos);
+        reporte.put("totalBodegas", totalBodegas);
+        reporte.put("productosBajoMinimo", productosBajoMinimo);
+        reporte.put("movimientosHoy", movimientosHoy);
         reporte.put("productosMasMovidos", productosMasMovidos);
-        
         return reporte;
     }
 

@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LogiTrack - Dashboard</title>
 <link rel="stylesheet" href="css/styles.css">
+<link rel="icon" type="image/x-icon" href="img/favicon.ico">
+<style>
+.button-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin:24px auto;max-width:1200px}
+.button-card{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#FFFFFF;border:1px solid #DDDDDD;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);text-decoration:none;color:#0A1A2F;aspect-ratio:1/1;transition:transform .15s ease, box-shadow .15s ease}
+.button-card:focus{outline:3px solid #13406a;outline-offset:2px}
+.button-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.button-card .icon{width:60%;height:60%;object-fit:contain;display:block}
+.button-card .label{margin-top:12px;font-weight:600;text-align:center}
+@media (max-width:480px){.button-card{aspect-ratio:1/1}}
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -17,14 +27,34 @@
 </div>
 </header>
 <main class="content">
-<nav class="menu">
-<a href="bodegas.html" class="menu-item">Bodegas</a>
-<a href="productos.html" class="menu-item">Productos</a>
-<a href="movimientos.html" class="menu-item">Movimientos</a>
-<a href="reportes.html" class="menu-item">Reportes</a>
-<a href="auditoria.html" class="menu-item admin-only">Auditoría</a>
-<a href="usuarios.html" class="menu-item admin-only">Usuarios</a>
-</nav>
+ 
+<section class="button-grid" aria-label="Accesos rápidos">
+  <a href="bodegas.html" class="button-card" role="button" aria-label="Bodegas">
+    <img src="img/BODEGAICON.PNG" alt="Icono Bodegas" class="icon">
+    <div class="label">Bodegas</div>
+  </a>
+  <a href="productos.html" class="button-card" role="button" aria-label="Productos">
+    <img src="img/PRODUCTOICON.PNG" alt="Icono Productos" class="icon">
+    <div class="label">Productos</div>
+  </a>
+  <a href="movimientos.html" class="button-card" role="button" aria-label="Movimientos">
+    <img src="img/MOVIMIENTOICON.PNG" alt="Icono Movimientos" class="icon">
+    <div class="label">Movimientos</div>
+  </a>
+  <a href="reportes.html" class="button-card" role="button" aria-label="Reportes">
+    <img src="img/REPORTESICON.PNG" alt="Icono Reportes" class="icon">
+    <div class="label">Reportes</div>
+  </a>
+  <a href="auditoria.html" class="button-card admin-only" role="button" aria-label="Auditoría">
+    <img src="img/AUDITORIAICON.png" alt="Icono Auditoría" class="icon">
+    <div class="label">Auditoría</div>
+  </a>
+  <a href="usuarios.html" class="button-card admin-only" role="button" aria-label="Usuarios">
+    <img src="img/USUARIOSICON.PNG" alt="Icono Usuarios" class="icon">
+    <div class="label">Usuarios</div>
+  </a>
+ 
+</section>
 </main>
 <script>
 function parseJwt(t){try{const p=t.split('.')[1];const d=JSON.parse(atob(p));return d;}catch(e){return null}}
