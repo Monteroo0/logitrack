@@ -27,6 +27,11 @@ public class MovimientoDTO {
     @NotNull
     private List<Item> productos;
 
+    @jakarta.validation.constraints.Size(max = 500)
+    private String observaciones;
+
+    private String usuarioNombre;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

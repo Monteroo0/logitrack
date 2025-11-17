@@ -12,6 +12,9 @@
 .table{width:100%;border-collapse:collapse;margin-top:16px}
 .table th,.table td{padding:12px;text-align:left;border-bottom:1px solid #DDDDDD}
 .table th{background:#F5F9FF;color:#0A1A2F;font-weight:600}
+.row-entrada{background:#4CAF50;color:#FFFFFF}
+.row-salida{background:#F44336;color:#FFFFFF}
+.row-transferencia{background:#FFEB3B;color:#000000}
 .btn.small{padding:6px 12px;font-size:14px;height:auto}
 .form-group{margin-bottom:16px}
 .form-group label{display:block;margin-bottom:4px;font-weight:600;color:#0A1A2F}
@@ -114,6 +117,13 @@ No hay productos con stock bajo
 </select>
 </div>
 <div class="form-group">
+<label for="movOrden">Orden:</label>
+<select id="movOrden">
+<option value="desc">Más reciente → Más antiguo</option>
+<option value="asc">Más antiguo → Más reciente</option>
+</select>
+</div>
+<div class="form-group">
 <button id="btnFiltrarMovimientos" class="btn primary">Generar Reporte</button>
 </div>
 </div>
@@ -129,6 +139,7 @@ No hay productos con stock bajo
 <th>Bodega Destino</th>
 <th>Producto</th>
 <th>Cantidad</th>
+<th>Observaciones</th>
 </tr>
 </thead>
 <tbody id="movimientosTableBody">
@@ -145,62 +156,7 @@ Seleccione un rango de fechas y tipo de movimiento
 </div>
 </div>
 
-<!-- Reporte: Auditorías -->
-<div class="report-section admin-only">
-<h3>Auditorías</h3>
-<div class="filter-form">
-<div class="form-group">
-<label for="auditUsuario">Usuario:</label>
-<input type="text" id="auditUsuario" name="usuario" placeholder="Nombre de usuario">
-</div>
-<div class="form-group">
-<label for="auditOperacion">Operación:</label>
-<select id="auditOperacion" name="operacion">
-<option value="">Todas</option>
-<option value="CREATE">Crear</option>
-<option value="UPDATE">Actualizar</option>
-<option value="DELETE">Eliminar</option>
-</select>
-</div>
-<div class="form-group">
-<label for="auditFechaInicio">Fecha Inicio:</label>
-<input type="date" id="auditFechaInicio" name="fechaInicio">
-</div>
-<div class="form-group">
-<label for="auditFechaFin">Fecha Fin:</label>
-<input type="date" id="auditFechaFin" name="fechaFin">
-</div>
-<div class="form-group">
-<button id="btnFiltrarAuditorias" class="btn primary">Generar Reporte</button>
-</div>
-</div>
-<div id="auditoriasContainer">
-<!-- Aquí va el fetch para cargar auditorías filtradas -->
-<table class="table">
-<thead>
-<tr>
-<th>ID</th>
-<th>Fecha</th>
-<th>Usuario</th>
-<th>Operación</th>
-<th>Entidad</th>
-<th>Valores Anteriores</th>
-<th>Valores Nuevos</th>
-</tr>
-</thead>
-<tbody id="auditoriasTableBody">
-<tr>
-<td colspan="7" style="text-align:center;padding:40px;color:#666">
-Seleccione filtros para generar el reporte
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="export-actions">
-<button id="btnExportarAuditorias" class="btn">Exportar a Excel</button>
-</div>
-</div>
+<!-- Sección Auditorías removida; usar módulo dedicado -->
 
 <!-- Resumen General -->
 <div class="report-section">
@@ -289,16 +245,36 @@ document.getElementById('btnFiltrarMovimientos').addEventListener('click',async 
     const inicio=document.getElementById('movFechaInicio').value;
     const fin=document.getElementById('movFechaFin').value;
     const tipo=document.getElementById('movTipo').value;
+    if(!inicio||!fin){return mostrarAlerta('Debe seleccionar fechas de inicio y fin','error')}
     let list=await apiRequest('GET',`/api/movimientos/por-fecha?inicio=${inicio}&fin=${fin}`);
     if(tipo){list=list.filter(m=>m.tipo===tipo)}
+    const orden=document.getElementById('movOrden').value||'desc';
+    list.sort((a,b)=>{const ta=new Date(a.fecha).getTime()||0;const tb=new Date(b.fecha).getTime()||0;return orden==='desc'?tb-ta:ta-tb});
+    try{localStorage.setItem('mov_order_'+(payload&&payload.username||'anon'),orden)}catch(e){}
     const tbody=document.getElementById('movimientosTableBody');
     tbody.innerHTML='';
-    list.forEach(m=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${m.fecha||''}</td><td>${m.tipo||''}</td><td>${''}</td><td>${m.bodegaOrigenId||''}</td><td>${m.bodegaDestinoId||''}</td><td>${(m.productos&&m.productos[0]&&m.productos[0].productoId)||''}</td><td>${(m.productos&&m.productos[0]&&m.productos[0].cantidad)||''}</td>`;tbody.appendChild(tr)});
-  }catch(err){}
+    list.forEach(m=>{const tr=document.createElement('tr');const cls=m.tipo==='ENTRADA'?'row-entrada':(m.tipo==='SALIDA'?'row-salida':(m.tipo==='TRANSFERENCIA'?'row-transferencia':''));if(cls)tr.className=cls;const usuarioTxt=(m.usuarioId||'')+(m.usuarioNombre?(' - '+m.usuarioNombre):'');tr.innerHTML=`<td>${m.fecha||''}</td><td>${m.tipo||''}</td><td>${usuarioTxt}</td><td>${m.bodegaOrigenId||''}</td><td>${m.bodegaDestinoId||''}</td><td>${(m.productos&&m.productos[0]&&m.productos[0].productoId)||''}</td><td>${(m.productos&&m.productos[0]&&m.productos[0].cantidad)||''}</td><td>${m.observaciones||''}</td>`;tbody.appendChild(tr)});
+  }catch(err){mostrarAlerta('Error al generar el reporte','error')}
 });
 
-document.getElementById('btnExportarMovimientos').addEventListener('click',function(){
-exportarAExcel('movimientosTableBody','reporte_movimientos');
+document.getElementById('btnExportarMovimientos').addEventListener('click',async function(){
+  try{
+    const inicio=document.getElementById('movFechaInicio').value;
+    const fin=document.getElementById('movFechaFin').value;
+    const tipo=document.getElementById('movTipo').value;
+    const orden=document.getElementById('movOrden').value||'desc';
+    if(!inicio||!fin){return mostrarAlerta('Debe seleccionar fechas de inicio y fin','error')}
+    const url=`/api/reportes/movimientos/export.xlsx?inicio=${inicio}&fin=${fin}&tipo=${tipo||''}&orden=${orden}`;
+    const resp=await fetch(url,{headers:{'Authorization':'Bearer '+(localStorage.getItem('token')||'')}});
+    if(!resp.ok){return mostrarAlerta('No autorizado o error al exportar','error')}
+    const blob=await resp.blob();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='reporte_movimientos.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }catch(e){mostrarAlerta('No se pudo exportar','error')}
 });
 
 document.getElementById('btnFiltrarAuditorias').addEventListener('click',async function(){

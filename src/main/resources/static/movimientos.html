@@ -16,6 +16,7 @@
 .form-group{margin-bottom:16px}
 .form-group label{display:block;margin-bottom:4px;font-weight:600;color:#0A1A2F}
 .form-group input,.form-group select{width:100%;padding:8px;border:1px solid #DDDDDD;border-radius:4px}
+.form-group textarea.obs{width:100%;height:100px;border:1px solid #DDDDDD;border-radius:4px;resize:none}
 .form-actions{display:flex;gap:12px;justify-content:flex-end}
 .alert{padding:12px;border-radius:4px;margin-bottom:16px}
 .alert.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
@@ -79,6 +80,10 @@
 <input type="number" id="entradaCantidad" name="cantidad" min="1" required>
 </div>
 </div>
+<div class="form-group">
+<label for="entradaObs">Observaciones:</label>
+<textarea id="entradaObs" name="observaciones" class="obs" maxlength="500" placeholder="Observaciones (máximo 500 caracteres)"></textarea>
+</div>
 <div class="form-actions">
 <button type="submit" class="btn primary">Registrar Entrada</button>
 </div>
@@ -105,6 +110,10 @@
 <label for="salidaCantidad">Cantidad:</label>
 <input type="number" id="salidaCantidad" name="cantidad" min="1" required>
 </div>
+</div>
+<div class="form-group">
+<label for="salidaObs">Observaciones:</label>
+<textarea id="salidaObs" name="observaciones" class="obs" maxlength="500" placeholder="Observaciones (máximo 500 caracteres)"></textarea>
 </div>
 <div class="form-actions">
 <button type="submit" class="btn primary">Registrar Salida</button>
@@ -139,65 +148,18 @@
 <input type="number" id="transferenciaCantidad" name="cantidad" min="1" required>
 </div>
 </div>
+<div class="form-group">
+<label for="transferenciaObs">Observaciones:</label>
+<textarea id="transferenciaObs" name="observaciones" class="obs" maxlength="500" placeholder="Observaciones (máximo 500 caracteres)"></textarea>
+</div>
 <div class="form-actions">
 <button type="submit" class="btn primary">Registrar Transferencia</button>
 </div>
 </form>
 </div>
 
-<!-- Sección de historial -->
-<h3>Historial de Movimientos</h3>
-
 <div class="filter-section">
-<h4>Filtros</h4>
-<form id="formFiltros" class="filter-form">
-<div class="form-group">
-<label for="fechaInicio">Fecha Inicio:</label>
-<input type="date" id="fechaInicio" name="fechaInicio">
-</div>
-<div class="form-group">
-<label for="fechaFin">Fecha Fin:</label>
-<input type="date" id="fechaFin" name="fechaFin">
-</div>
-<div class="form-group">
-<label for="tipoMovimiento">Tipo de Movimiento:</label>
-<select id="tipoMovimiento" name="tipoMovimiento">
-<option value="">Todos</option>
-<option value="ENTRADA">Entrada</option>
-<option value="SALIDA">Salida</option>
-<option value="TRANSFERENCIA">Transferencia</option>
-</select>
-</div>
-<div class="form-group">
-<button type="submit" class="btn primary">Filtrar</button>
-<button type="button" id="btnLimpiarFiltros" class="btn">Limpiar</button>
-</div>
-</form>
-</div>
-
-<div id="movimientosContainer">
-<!-- Aquí va el fetch para cargar movimientos -->
-<table class="table">
-<thead>
-<tr>
-<th>Fecha</th>
-<th>Tipo</th>
-<th>Usuario</th>
-<th>Bodega Origen</th>
-<th>Bodega Destino</th>
-<th>Producto</th>
-<th>Cantidad</th>
-<th>Observaciones</th>
-</tr>
-</thead>
-<tbody id="movimientosTableBody">
-<tr>
-<td colspan="8" style="text-align:center;padding:40px;color:#666">
-Cargando movimientos...
-</td>
-</tr>
-</tbody>
-</table>
+<a href="reportes.html" class="btn">Ver Historial en Reportes</a>
 </div>
 </div>
 </main>
@@ -250,7 +212,8 @@ document.getElementById('formEntrada').addEventListener('submit',async function(
     const dto={
       tipo:'ENTRADA',
       bodegaDestinoId:parseInt(document.getElementById('entradaBodega').value,10),
-      productos:[{productoId:parseInt(document.getElementById('entradaProducto').value,10),cantidad:parseInt(document.getElementById('entradaCantidad').value,10)}]
+      productos:[{productoId:parseInt(document.getElementById('entradaProducto').value,10),cantidad:parseInt(document.getElementById('entradaCantidad').value,10)}],
+      observaciones:document.getElementById('entradaObs').value.trim()
     };
     console.log('token len', (localStorage.getItem('token')||'').trim().length);
     await apiRequest('POST','/api/movimientos',dto);
@@ -265,7 +228,8 @@ document.getElementById('formSalida').addEventListener('submit',async function(e
     const dto={
       tipo:'SALIDA',
       bodegaOrigenId:parseInt(document.getElementById('salidaBodega').value,10),
-      productos:[{productoId:parseInt(document.getElementById('salidaProducto').value,10),cantidad:parseInt(document.getElementById('salidaCantidad').value,10)}]
+      productos:[{productoId:parseInt(document.getElementById('salidaProducto').value,10),cantidad:parseInt(document.getElementById('salidaCantidad').value,10)}],
+      observaciones:document.getElementById('salidaObs').value.trim()
     };
     console.log('token len', (localStorage.getItem('token')||'').trim().length);
     await apiRequest('POST','/api/movimientos',dto);
@@ -281,7 +245,8 @@ document.getElementById('formTransferencia').addEventListener('submit',async fun
       tipo:'TRANSFERENCIA',
       bodegaOrigenId:parseInt(document.getElementById('transferenciaOrigen').value,10),
       bodegaDestinoId:parseInt(document.getElementById('transferenciaDestino').value,10),
-      productos:[{productoId:parseInt(document.getElementById('transferenciaProducto').value,10),cantidad:parseInt(document.getElementById('transferenciaCantidad').value,10)}]
+      productos:[{productoId:parseInt(document.getElementById('transferenciaProducto').value,10),cantidad:parseInt(document.getElementById('transferenciaCantidad').value,10)}],
+      observaciones:document.getElementById('transferenciaObs').value.trim()
     };
     console.log('token len', (localStorage.getItem('token')||'').trim().length);
     await apiRequest('POST','/api/movimientos',dto);
@@ -289,31 +254,6 @@ document.getElementById('formTransferencia').addEventListener('submit',async fun
   }catch(err){mostrarAlerta(err.message,'error')}
 });
 
-document.getElementById('formFiltros').addEventListener('submit',async function(e){
-  e.preventDefault();
-  try{
-    const inicio=document.getElementById('fechaInicio').value;
-    const fin=document.getElementById('fechaFin').value;
-    const tipo=document.getElementById('tipoMovimiento').value;
-    let url='/api/movimientos';
-    if(inicio&&fin){url=`/api/movimientos/por-fecha?inicio=${inicio}&fin=${fin}`}
-    let list=await apiRequest('GET',url);
-    if(!Array.isArray(list)){list=[]}
-    if(tipo){list=list.filter(m=>m.tipo===tipo)}
-    const tbody=document.getElementById('movimientosTableBody');
-    tbody.innerHTML='';
-    list.forEach(m=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${m.fecha||''}</td><td>${m.tipo||''}</td><td>${''}</td><td>${m.bodegaOrigenId||''}</td><td>${m.bodegaDestinoId||''}</td><td>${(m.productos&&m.productos[0]&&m.productos[0].productoId)||''}</td><td>${(m.productos&&m.productos[0]&&m.productos[0].cantidad)||''}</td><td>${''}</td>`;
-      tbody.appendChild(tr);
-    });
-  }catch(err){mostrarAlerta(err.message,'error')}
-});
-
-document.getElementById('btnLimpiarFiltros').addEventListener('click',function(){
-document.getElementById('formFiltros').reset();
-// Aquí va el fetch para cargar todos los movimientos
-});
 
 // Cargar datos al iniciar
 window.addEventListener('DOMContentLoaded',function(){

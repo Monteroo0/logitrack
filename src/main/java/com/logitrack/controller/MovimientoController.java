@@ -44,6 +44,9 @@ public class MovimientoController {
 
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody MovimientoDTO dto, HttpServletRequest request) {
+        if (dto.getObservaciones()!=null && dto.getObservaciones().length()>500) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error","Observaciones inválidas"));
+        }
         if (dto.getUsuarioId() == null) {
             String auth = request.getHeader("Authorization");
             if (auth != null && auth.startsWith("Bearer ")) {
@@ -101,8 +104,10 @@ public class MovimientoController {
         dto.setFecha(m.getFecha());
         dto.setTipo(m.getTipo());
         dto.setUsuarioId(m.getUsuario() != null ? m.getUsuario().getId() : null);
+        dto.setUsuarioNombre(m.getUsuario()!=null?m.getUsuario().getNombre():null);
         dto.setBodegaOrigenId(m.getBodegaOrigen() != null ? m.getBodegaOrigen().getId() : null);
         dto.setBodegaDestinoId(m.getBodegaDestino() != null ? m.getBodegaDestino().getId() : null);
+        dto.setObservaciones(m.getObservaciones());
         if (m.getProductos() != null) {
             dto.setProductos(m.getProductos().stream()
                     .map(mp -> new MovimientoDTO.Item(

@@ -41,6 +41,7 @@ CREATE TABLE movimiento (
     usuario_id BIGINT,
     bodega_origen_id BIGINT,
     bodega_destino_id BIGINT,
+    observaciones TEXT,
     FOREIGN KEY (usuario_id) REFERENCES usuario(id),
     FOREIGN KEY (bodega_origen_id) REFERENCES bodega(id),
     FOREIGN KEY (bodega_destino_id) REFERENCES bodega(id)

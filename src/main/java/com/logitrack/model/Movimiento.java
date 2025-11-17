@@ -37,4 +37,7 @@ public class Movimiento {
 
     @OneToMany(mappedBy = "movimiento", cascade = CascadeType.ALL)
     private List<MovimientoProducto> productos;
+
+    @Column(name = "observaciones", columnDefinition = "TEXT")
+    private String observaciones;
 }

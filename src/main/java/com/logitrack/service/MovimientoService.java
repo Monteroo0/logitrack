@@ -69,6 +69,7 @@ public class MovimientoService {
         movimiento.setFecha(dto.getFecha() != null ? dto.getFecha() : LocalDateTime.now());
         movimiento.setTipo(dto.getTipo());
         movimiento.setUsuario(usuarioOpt.get());
+        movimiento.setObservaciones(dto.getObservaciones());
 
         if (dto.getBodegaOrigenId() != null) {
             bodegaRepository.findById(dto.getBodegaOrigenId()).ifPresent(movimiento::setBodegaOrigen);
@@ -136,14 +137,16 @@ public class MovimientoService {
                     "tipo", dto.getTipo(),
                     "bodegaOrigenId", dto.getBodegaOrigenId(),
                     "bodegaDestinoId", dto.getBodegaDestinoId(),
-                    "stocks", auditBefore
+                    "stocks", auditBefore,
+                    "observaciones", dto.getObservaciones()
             ));
             String newJson = objectMapper.writeValueAsString(java.util.Map.of(
                     "movimientoId", saved.getId(),
                     "tipo", saved.getTipo(),
                     "bodegaOrigenId", saved.getBodegaOrigen() != null ? saved.getBodegaOrigen().getId() : null,
                     "bodegaDestinoId", saved.getBodegaDestino() != null ? saved.getBodegaDestino().getId() : null,
-                    "stocks", auditAfter
+                    "stocks", auditAfter,
+                    "observaciones", saved.getObservaciones()
             ));
             audit.setValoresAnteriores(prevJson);
             audit.setValoresNuevos(newJson);
